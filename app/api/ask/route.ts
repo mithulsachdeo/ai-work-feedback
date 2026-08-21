@@ -61,6 +61,14 @@ export async function POST(req: NextRequest) {
   const apiKey = byoKey || process.env.GEMINI_API_KEY!;
 
   // Scope guardrail: keep this on-purpose. It is NOT a general assistant.
+  // (fixed 2026-08-22, from live UI check) the Gemini adapter forces
+  // responseMimeType: "application/json" for ALL calls (it's shared with evaluate()), and the
+  // OpenAI adapter likewise forces response_format: json_object — both unconditionally, since
+  // Task 5 gives every provider one uniform signature. Without an explicit JSON contract here,
+  // Gemini/OpenAI invent their own wrapper shape (observed: `{"response": "..."}`) and it was
+  // rendered raw in SideQuestions.tsx. Fix: ask ALL THREE providers for the same tiny JSON
+  // shape explicitly, then parse it below with a plain-text fallback for Anthropic (which
+  // doesn't force JSON mode and may still just answer in prose despite the instruction).
   const system =
     "You are a tutor INSIDE a writing-feedback tool. You may ONLY help with: the user's current " +
     "submission, the feedback they just received, or how to use AI well and improve their own " +
@@ -68,12 +76,27 @@ export async function POST(req: NextRequest) {
     "unrelated coding, or a request to DO a task for them like writing/translating/answering " +
     "something), politely decline in one sentence and redirect them back to their work — do NOT " +
     "answer it. For in-scope questions: answer clearly in 2-4 sentences, then in one short sentence " +
-    "point them back to the step they were on. Never let a tangent take over.";
+    "point them back to the step they were on. Never let a tangent take over. " +
+    'Return EXACTLY this JSON shape, no markdown fences, no extra text: {"answer": "<your reply>"}.';
   const user2 = `The user is currently: ${context || "reviewing their feedback"}.\nQuestion: ${question}`;
 
+  // Unwraps the {"answer": "..."} contract above; falls back to the raw (code-fence-stripped)
+  // text if a provider ignores the instruction and replies in plain prose.
+  function extractAnswer(raw: string): string {
+    const stripped = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+    try {
+      const parsed = JSON.parse(stripped);
+      if (parsed && typeof parsed.answer === "string") return parsed.answer;
+      if (parsed && typeof parsed.response === "string") return parsed.response;
+    } catch {
+      // Not valid JSON — treat as the plain-text answer itself.
+    }
+    return stripped;
+  }
+
   try {
-    const answer = await callers[provider](system, user2, apiKey);
-    return NextResponse.json({ answer });
+    const raw = await callers[provider](system, user2, apiKey);
+    return NextResponse.json({ answer: extractAnswer(raw) });
   } catch {
     return NextResponse.json({ error: "Couldn't answer that just now — try again." }, { status: 502 });
   }
