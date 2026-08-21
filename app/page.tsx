@@ -1,95 +1,123 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { useEffect } from "react";
+import posthog from "posthog-js";
+import SignIn from "@/components/SignIn";
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.tsx</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  useEffect(() => {
+    posthog.capture("landing_viewed");
+  }, []);
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  return (
+    <main
+      style={{
+        width: "min(calc(100% - 32px), 1280px)",
+        margin: "24px auto",
+        minHeight: "calc(100vh - 48px)",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
+    >
+      <section
+        style={{
+          background: "var(--color-ink)",
+          color: "var(--color-paper)",
+          borderRadius: "var(--radius-section)",
+          padding: "clamp(36px, 6vw, 80px) clamp(24px, 5vw, 64px)",
+          display: "grid",
+          gridTemplateColumns: "1fr",
+          gap: "40px",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "780px" }}>
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <span
+              style={{
+                textTransform: "uppercase",
+                letterSpacing: "0.14em",
+                fontSize: "11px",
+                fontWeight: 800,
+                padding: "6px 14px",
+                borderRadius: "var(--radius-pill)",
+                background: "rgba(255, 252, 245, 0.12)",
+                color: "var(--color-lime)",
+              }}
+            >
+              Signal / learn
+            </span>
+            <span style={{ fontSize: "12px", opacity: 0.6, color: "var(--color-paper)" }}>
+              Feedback coach for AI-assisted work
+            </span>
+          </div>
+
+          <h1
+            style={{
+              fontSize: "clamp(42px, 6.5vw, 84px)",
+              lineHeight: 0.94,
+              letterSpacing: "-0.055em",
+              fontWeight: 800,
+              color: "var(--color-paper)",
+            }}
           >
-            <Image
-              className={styles.logo}
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
+            Is your AI-assisted work <span style={{ color: "var(--color-lime)" }}>actually good?</span>
+          </h1>
+
+          <p
+            style={{
+              fontSize: "clamp(16px, 2vw, 20px)",
+              lineHeight: 1.5,
+              color: "rgba(255, 252, 245, 0.78)",
+              maxWidth: "640px",
+            }}
           >
-            Read our docs
-          </a>
+            Bring one thing you made with AI — an email, a doc, or your understanding of something you&apos;re learning. Get specific feedback on whether it&apos;s good, and whether you&apos;re using AI well.
+          </p>
+
+          <div style={{ marginTop: "12px" }}>
+            <SignIn />
+          </div>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        <div
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "10px",
+            borderTop: "1px solid rgba(255, 252, 245, 0.15)",
+            paddingTop: "24px",
+            alignItems: "center",
+          }}
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          <span style={{ fontSize: "12px", color: "rgba(255, 252, 245, 0.5)", fontWeight: 700, marginRight: "8px" }}>
+            Check any of:
+          </span>
+          {[
+            { label: "Emails to leadership", rot: "-1deg" },
+            { label: "Automation logic", rot: "1.5deg" },
+            { label: "Strategy summaries", rot: "-2deg" },
+            { label: "Concept understanding", rot: "1deg" },
+          ].map((pill, idx) => (
+            <span
+              key={idx}
+              style={{
+                fontSize: "13px",
+                fontWeight: 700,
+                padding: "6px 14px",
+                borderRadius: "var(--radius-pill)",
+                background: "rgba(255, 252, 245, 0.08)",
+                color: "var(--color-paper)",
+                border: "1px solid rgba(255, 252, 245, 0.15)",
+                transform: `rotate(${pill.rot})`,
+              }}
+            >
+              {pill.label}
+            </span>
+          ))}
+        </div>
+      </section>
+    </main>
   );
 }
