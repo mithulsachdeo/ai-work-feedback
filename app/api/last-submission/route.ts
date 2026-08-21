@@ -3,7 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getLastSubmission } from "@/lib/data";
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const cookieStore = cookies();
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
