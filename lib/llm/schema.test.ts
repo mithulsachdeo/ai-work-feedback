@@ -14,8 +14,11 @@ const valid = JSON.stringify({
 
 test("parses a valid evaluation", () => {
   const r = parseEvaluation(valid);
-  expect(r.fix_this_first).toContain("Verify");
-  expect(r.criteria.verified.level).toBe("Emerging");
+  expect(r.not_evaluable).toBeUndefined();
+  if (!r.not_evaluable) {
+    expect(r.fix_this_first).toContain("Verify");
+    expect(r.criteria.verified.level).toBe("Emerging");
+  }
 });
 
 test("throws on a missing criterion", () => {
