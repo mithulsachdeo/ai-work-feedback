@@ -1,7 +1,7 @@
 # Design Spec — MVP Implementation
 
 **Date:** 2026-08-21
-**Status:** Draft for review
+**Status:** Draft for review · grilled 2026-08-21 (see §14)
 **Related:** `2026-08-21-ai-work-rubric-design.md` (the rubric/product spec), `Handoff.md`, case brief
 **Deadline:** 26 Aug 2026 — working MVP + 40–50 real users + full funnel + one iteration
 
@@ -31,7 +31,7 @@ user's hand, not just grade it.** Every build decision is subordinate to that.
 | Build tool | **Claude Code** |
 | Framework | **Next.js** (React) |
 | Host | **Vercel** |
-| Database + Auth | **Supabase** — Postgres + magic-link / Google sign-in |
+| Database + Auth | **Supabase** — Postgres + magic-link sign-in |
 | Server-side secret + LLM calls | **Next.js API routes** (Vercel serverless functions) |
 | Analytics | **PostHog** (free tier) — funnel + retention charts |
 | Default runtime LLM | **Google Gemini free tier** (a Flash-class model) |
@@ -64,20 +64,39 @@ adapter layer beneath it, so swapping or adding providers is a localized change.
 
 ## 4. Components
 
-1. **Onboarding / auth** — landing → magic-link or Google sign-in → capture **role once**
+1. **Onboarding / auth** — landing → magic-link sign-in → capture **role once**
    (personalization only, never a curriculum fork) → one-line **consent disclosure** (§7).
+   **Google sign-in dropped from v1 (added 2026-08-21, from spec grill):** verification
+   itself isn't the blocker (basic email/profile scopes need no Google review, and "Testing"
+   mode covers up to 100 users — well above the 40–50 target), but an unverified app shows
+   users a "Google hasn't verified this app" warning screen before they can continue. That
+   friction undercuts the "private, safe" positioning at the exact moment a new user decides
+   whether to trust the tool with real work — not worth it for a secondary sign-in path.
+   Magic-link is sufficient alone for a 40–50-user warm-network launch.
 2. **Submission** — the three-question declared-purpose picker (Work product / Implementation
    logic / Concept articulation), paste box with per-type helper text, and the "Generate it"
    prompt helper for implementation-logic. (Full copy in the rubric spec §3.)
+   **Empathy delighter (added 2026-08-21, from feature grill) — two static lines near the
+   submission box, zero tracking/infrastructure, never blocking:**
+   - **Constant line (always shown):** *"Working on something high-stakes? Take an extra
+     pass before you check it."* — a light nudge toward care on important work, doubling as
+     a soft echo of the rubric's own verification emphasis.
+   - **Time-of-day line (client-clock only, shown after ~9pm local time, no tracking or
+     persistence):** *"Working late? No rush — this'll be here when you're ready."*
+   - **Deliberately excluded:** any "you've been at this a while" session-duration check —
+     the one variant of the original idea that would need real behavior tracking, and the
+     one most likely to read as surveillance rather than delight. Scoped as a pure delighter,
+     not a wellness feature — see grill addendum below.
 3. **Eval engine** (`/api/evaluate`) — the single LLM call. Builds the rubric prompt
    (two layers, six criteria, per-type flex), returns structured JSON, enforces quota, logs.
 4. **Feedback UI** — one-glance view (six level chips + the single "Fix this first" headline)
    → progressive disclosure per criterion (evidence + "what good looks like") → side-questions
    chat (`/api/ask`, scoped, always routes back to the current step).
 5. **Quota + unlock** — per-user daily counter on the shared tier (**~10 checks/day**, a
-   tunable dial); "X checks left today";
+   tunable dial) applies to `/api/evaluate` only; "X checks left today";
    graceful reset-tomorrow state that prompts **"add your own key for unlimited, sharper
-   checks."**
+   checks."** **`/api/ask` (side-questions) does not draw from this counter (added
+   2026-08-21, from spec grill)** — see §6.
 6. **BYO-key** (§5) — optional, session-only, unlocks better quality + bypasses the shared
    quota.
 7. **Instrumentation** (§6) — events across the whole journey.
@@ -128,6 +147,16 @@ no-training) so users see Layer 2 at its best and the privacy promise holds. Pai
 "don't store this one" option (§7), this closes the trust gap the review flagged. Decision
 left to the builder; default remains free-tier if cost must be zero.
 
+**Free-tier Layer-2 disclosure — framed as the BYO-key value prop (added 2026-08-21, from
+rubric-spec grill):** the free-tier default for launch is re-affirmed, not revisited (see
+above). But the known ~15–25% Layer-2 softness should be **disclosed to users**, not hidden
+— framed positively as the reason the BYO-key unlock exists, e.g. *"get sharper AI-usage
+feedback with your own key,"* rather than as a confession of weakness. This belongs alongside
+the existing BYO-key value-prop bullets (§5 above — "better output quality," "a privacy win to
+advertise") wherever the BYO-key unlock is surfaced (the daily-cap prompt in §4.5 and any
+in-app upsell copy): add a third framing — *sharper Layer 2 feedback* — using positive,
+capability-forward copy, not a disclaimer about the free tier's weakness.
+
 ---
 
 ## 6. The eval call
@@ -141,7 +170,14 @@ left to the builder; default remains free-tier if cost must be zero.
 - **Layer 2 hedging:** feedback is inferred from text signals and must hedge ("this reads
   as…"); where signal is weak, the tool may ask 1–2 single-tap self-report questions.
 - **Side-questions** (`/api/ask`): answers any user question clearly, then routes back to the
-  current step; subordinate to finishing the loop.
+  current step; subordinate to finishing the loop. **Quota (added 2026-08-21, from spec
+  grill): does NOT share the `/api/evaluate` daily counter.** A single realistic first
+  session (submit → ask a side-question or two → "Revise & re-check") could otherwise burn
+  4–5 of 10 evaluate-slots before a new user has explored a second submission type, killing
+  activation for exactly the users this launch needs to convert. `/api/ask` instead gets its
+  own separate, generous cap (or none) — the auth-gate + per-request length cap already
+  guard the shared key from abuse on this route, since each call is short and cheap relative
+  to a full evaluation.
 
 ---
 
@@ -176,10 +212,22 @@ the deploy smoke test.
   (names, company). Dropping the email column is necessary but not sufficient. v1 acceptable
   posture at friendly-tester scale: store raw text under the pseudonymous key + a clear
   disclosure. **Hardening item (flagged, not v1):** a PII-scrub pass on stored text.
-- **Consent disclosure** at signup, one line: *"We store your submissions anonymously to
-  improve the tool."*
-- **Third-party note:** on the Gemini free tier, Google also collects/trains on inputs;
-  disclose both. BYO-key routes data to the user's own provider under their terms.
+- **Consent disclosure — updated (2026-08-21, from spec grill).** The acquisition channel is
+  explicitly warm-network/LinkedIn (real colleagues submitting real emails, real client
+  names, real figures), and PII-scrubbing is deliberately deferred (see caveat above), so the
+  one-line disclosure needs to cover storage *and* the free-tier training fact together,
+  rather than leaving the training fact only in this spec's prose:
+  *"We store your submissions anonymously to improve the tool. On the free tier, your
+  submission is also sent to Google, which may use it to improve their models."*
+  One consent line, not two separate warnings — splitting it would add friction without
+  adding real protection.
+- **Paste-box nudge — new (2026-08-21, from spec grill):** one line of copy near the
+  submission text box — *"Avoid pasting anything truly confidential."* Costs nothing to
+  build, and matters more here than at arm's-length acquisition, since these are people the
+  builder actually knows submitting their real work.
+- **Third-party note:** on the Gemini free tier, Google also collects/trains on inputs — now
+  folded into the consent line above rather than left as spec-only prose. BYO-key routes data
+  to the user's own provider under their terms.
 
 ---
 
@@ -233,16 +281,27 @@ active user, quota-hit rate, BYO-key conversion.
 - **Cost/abuse** — the per-user daily quota is the primary guard on the shared free key; both
   LLM-facing routes require a signed-in user. Quota is **read before the eval and consumed only
   on a successful, parsed result**, so a failed / `not_evaluable` eval never charges the user.
-  **`/api/ask` shares the same daily quota** and has its own length cap, so it can't be used as
-  a free unlimited LLM. Over-cap submissions are truncated **with a visible notice** on every
-  response.
+  **`/api/ask` has its own separate, generous cap (updated 2026-08-21, from spec grill — it no
+  longer shares `/api/evaluate`'s 10/day counter, to avoid exhausting a new user's first
+  session)** plus its own length cap, so it still can't be used as a free unlimited LLM. Over-cap
+  submissions are truncated **with a visible notice** on every response.
 - **Secrets** — all keys server-side; BYO keys per-request, never persisted.
 
 **Error states:**
 - **LLM error/timeout** — retry once; then "couldn't check that just now, try again."
 - **Shared quota exhausted** — reset-tomorrow state + BYO-key unlock prompt.
-- **Gemini free-tier rate limit tripped** (shared key) — same graceful message; the daily cap
-  is the primary guard against this.
+- **Gemini free-tier rate limit tripped** (shared key) — **corrected 2026-08-21, from
+  rate-limit grill:** the per-user daily quota does NOT guard against this. Google applies
+  rate limits per-project, not per-key or per-user, so every free-tier user shares one
+  ceiling (~15 req/min, third-party-reported, re-verify at build time) regardless of
+  individual daily-quota status — a burst right after a launch post could plausibly trip it
+  even with everyone well under their own 10/day cap. Mitigation: a detected rate-limit-shaped
+  failure backs off ~2.5s before its single retry (instead of retrying instantly into the same
+  saturated limit), and the resulting error message is distinct — "we're getting a lot of
+  checks right now, try again in a minute" — rather than the generic failure message, since the
+  correct wait time differs. Deliberately not solved by upgrading to a paid tier for launch;
+  see `2026-08-21-mvp-implementation.md`'s "rate-limit grill" for why that stays a separate,
+  already-settled decision.
 - **Provider refusal / safety stop** — friendly message, no crash.
 - **Too-short / empty / over-cap submission** — "add a bit more" / truncate-with-notice.
 - **Invalid BYO key** — clear "that key didn't work" with a retry, no persistence.
@@ -316,3 +375,47 @@ collected data.
 - No curriculum, roadmap, or "what to learn" (per rubric spec §7).
 - No employer/L&D layer.
 - No copilot / "do the next step for me" (per rubric spec §7 "handling stuck").
+- **No Google sign-in (added 2026-08-21, from spec grill)** — magic-link only for v1; see §4.1.
+
+---
+
+## 14. Grill log (2026-08-21)
+
+This spec was stress-tested via `/grilling`, focused on architecture/data/metrics/guardrail
+decisions not already covered by the separate rubric-spec grill (`2026-08-21-ai-work-rubric-
+design.md` §11) or the plan grill (`2026-08-21-mvp-implementation.md`, "Grill log" section).
+All findings marked **"(added 2026-08-21, from spec grill)"** inline above. Summary:
+
+- **2-day build estimate:** re-affirmed as-is, no explicit cut-list added — accepted risk.
+- **`/api/ask` quota decoupled from `/api/evaluate`'s 10/day cap (§4, §6, §9):** side-questions
+  now get their own separate, generous limit, so a single first session (submit + ask +
+  revise) can't exhaust a new user's daily evaluations before they've explored the product.
+- **North-star metric's no-headroom edge case (a user who scores Strong on everything at
+  first submission can't register "improved"): parked**, pending the north-star metric
+  itself being finalized — revisit together, same as the parallel item already parked in the
+  rubric spec's §9.
+- **Consent line rewritten (§7)** to cover both anonymized storage and the free-tier
+  Google-training fact in one sentence, rather than leaving the training fact as spec-only
+  prose. Added a separate one-line "avoid pasting anything truly confidential" nudge near the
+  submission box.
+- **Google sign-in dropped from v1 (§4, §13):** researched and confirmed verification itself
+  isn't the timeline risk (basic scopes need no Google review; "Testing" mode covers 100
+  users), but the unverified-app warning screen shown to users is a trust/conversion risk
+  that undercuts the product's "private, safe" positioning — not worth it for a secondary
+  sign-in path. Magic-link is the sole sign-in method for v1.
+
+### Addendum: "empathy delighter" feature grill (2026-08-21)
+
+A separate, later grill session evaluated a new feature idea proposed after the above (not
+part of the original architecture grill): empathetic check-ins noticing late-night use, long
+sessions, or high-stakes work. Verdict: **worth adding, scoped down hard to a pure delighter**
+— see §4.2 for the resulting two static copy lines. Key reasoning:
+- The idea risked conflicting with the rubric spec's §7 hard scope line (not a copilot, not a
+  wellness app) — resolved by treating it as a minor, self-justifying delighter rather than a
+  new product surface, at near-zero build cost (static/time-conditional copy only).
+- The value hypothesis is a blend of trust/differentiation and an early, softer echo of the
+  rubric's own over-trust detection (Layer 2) — not general user wellbeing, which would have
+  been the weakest justification for a case-study MVP graded on a judgment product.
+- The "been at this a long time" trigger was cut because it's the only variant needing real
+  session-tracking infrastructure, and the one most likely to feel like surveillance rather
+  than care, given the product already scrutinizes the user's real work.
