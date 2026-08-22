@@ -55,10 +55,17 @@ export async function POST(req: NextRequest) {
   // Abuse protection limits (bypassed for BYO-key requests):
   if (!byo) {
     const db = getServerClient();
-    const { count: feedbackCount } = await db
+    const { count: feedbackCount, error: feedbackCountErr } = await db
       .from("ask_requests")
       .select("id", { count: "exact", head: true })
       .eq("evaluation_id", evaluationId);
+    if (feedbackCountErr) {
+      console.error("Database error checking ask_requests evaluation count:", feedbackCountErr);
+      return NextResponse.json(
+        { error: "Couldn't verify question limits right now — please try again." },
+        { status: 500 }
+      );
+    }
     if ((feedbackCount ?? 0) >= MAX_QUESTIONS_PER_FEEDBACK) {
       await track(user.id, "ask_quota_hit", { evaluationId });
       return NextResponse.json(
@@ -68,11 +75,18 @@ export async function POST(req: NextRequest) {
     }
 
     const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString();
-    const { count: rpmCount } = await db
+    const { count: rpmCount, error: rpmCountErr } = await db
       .from("ask_requests")
       .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .gte("created_at", oneMinuteAgo);
+    if (rpmCountErr) {
+      console.error("Database error checking ask_requests RPM count:", rpmCountErr);
+      return NextResponse.json(
+        { error: "Couldn't verify question limits right now — please try again." },
+        { status: 500 }
+      );
+    }
     if ((rpmCount ?? 0) >= ASK_RPM_LIMIT) {
       await track(user.id, "ask_throttled", { evaluationId });
       return NextResponse.json(
