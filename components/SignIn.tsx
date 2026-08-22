@@ -36,14 +36,14 @@ export default function SignIn() {
           border: "1px solid var(--color-lime)",
           borderRadius: "20px",
           padding: "20px 24px",
-          color: "var(--color-paper)",
+          color: "var(--theme-card-text)",
           marginTop: "16px",
         }}
       >
         <div style={{ fontWeight: 800, fontSize: "16px", marginBottom: "4px" }}>
           Check your email ↗
         </div>
-        <p style={{ fontSize: "14px", color: "var(--color-text-muted-dark)" }}>
+        <p style={{ fontSize: "14px", color: "var(--theme-card-text-muted)" }}>
           We sent a sign-in link to <strong>{email}</strong>. Click it to begin.
         </p>
       </div>
@@ -63,10 +63,10 @@ export default function SignIn() {
             flex: "1 1 240px",
             padding: "14px 20px",
             borderRadius: "var(--radius-pill)",
-            border: "1px solid var(--color-border)",
-            background: "#ffffff",
+            border: "1px solid var(--theme-input-border)",
+            background: "var(--theme-input-bg)",
             fontSize: "15px",
-            color: "var(--color-ink)",
+            color: "var(--theme-input-text)",
             outline: "none",
           }}
         />

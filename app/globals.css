@@ -1,4 +1,5 @@
-:root {
+:root,
+[data-theme="dark"] {
   --color-ink: #171919;
   --color-paper: #FFFCF5;
   --color-lime: #C9FF36;
@@ -20,6 +21,32 @@
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
   --duration-fast: 200ms;
   --duration-standard: 300ms;
+
+  --theme-frame-bg: var(--color-paper);
+  --theme-frame-text: var(--color-ink);
+  --theme-card-bg: var(--color-ink);
+  --theme-card-text: var(--color-paper);
+  --theme-card-text-muted: rgba(255, 252, 245, 0.72);
+  --theme-card-border: rgba(255, 252, 245, 0.2);
+  --theme-card-surface: rgba(255, 252, 245, 0.06);
+  --theme-card-surface-hover: rgba(255, 252, 245, 0.1);
+  --theme-input-bg: rgba(255, 252, 245, 0.08);
+  --theme-input-text: var(--color-paper);
+  --theme-input-border: rgba(255, 252, 245, 0.2);
+}
+
+[data-theme="light"] {
+  --theme-frame-bg: var(--color-ink);
+  --theme-frame-text: var(--color-paper);
+  --theme-card-bg: var(--color-paper);
+  --theme-card-text: var(--color-ink);
+  --theme-card-text-muted: var(--color-text-muted);
+  --theme-card-border: var(--color-border);
+  --theme-card-surface: rgba(23, 25, 25, 0.06);
+  --theme-card-surface-hover: rgba(23, 25, 25, 0.1);
+  --theme-input-bg: #ffffff;
+  --theme-input-text: var(--color-ink);
+  --theme-input-border: var(--color-border);
 }
 
 * {
@@ -32,8 +59,8 @@ html,
 body {
   max-width: 100vw;
   min-height: 100vh;
-  background-color: var(--color-paper);
-  color: var(--color-ink);
+  background-color: var(--theme-frame-bg);
+  color: var(--theme-frame-text);
   font-family: var(--font-manrope), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

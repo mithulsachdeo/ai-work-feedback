@@ -8,21 +8,21 @@ import FeedbackWidget from "./FeedbackWidget";
 
 const LEVEL_STYLES: Record<Level, { bg: string; color: string; border: string; label: string }> = {
   Emerging: {
-    bg: "rgba(255, 112, 67, 0.12)",
-    color: "#D84315",
-    border: "rgba(255, 112, 67, 0.35)",
+    bg: "rgba(255, 112, 67, 0.15)",
+    color: "#FF8A65",
+    border: "rgba(255, 112, 67, 0.4)",
     label: "Emerging",
   },
   Solid: {
-    bg: "rgba(255, 193, 7, 0.14)",
-    color: "#996500",
-    border: "rgba(255, 193, 7, 0.4)",
+    bg: "rgba(255, 193, 7, 0.16)",
+    color: "#FFD54F",
+    border: "rgba(255, 193, 7, 0.45)",
     label: "Solid",
   },
   Strong: {
-    bg: "rgba(89, 201, 149, 0.15)",
-    color: "#1B7A42",
-    border: "rgba(89, 201, 149, 0.45)",
+    bg: "rgba(89, 201, 149, 0.18)",
+    color: "#81C784",
+    border: "rgba(89, 201, 149, 0.5)",
     label: "Strong",
   },
 };
@@ -42,14 +42,12 @@ export default function FeedbackView({
 
   useEffect(() => {
     posthog.capture("fix_viewed", { evaluationId });
-    // Write the behavioral outcome (the north-star's gold signal).
     fetch("/api/outcome", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ evaluationId, action: "viewed_fix" }),
     }).catch(() => {});
 
-    // Check one-time feedback nudge
     if (typeof window !== "undefined" && !result.not_evaluable) {
       const seen = localStorage.getItem("feedback_nudge_shown");
       if (!seen) {
@@ -65,18 +63,18 @@ export default function FeedbackView({
     }
   };
 
-  // Guardrail branch: the model returned "can't check this" instead of scores.
   if (result.not_evaluable) {
     return (
       <div
         style={{
-          background: "#ffffff",
-          border: "1px solid rgba(255, 112, 67, 0.3)",
+          background: "var(--theme-card-surface)",
+          border: "1px solid rgba(255, 112, 67, 0.4)",
           borderRadius: "var(--radius-card)",
           padding: "clamp(24px, 4vw, 36px)",
           display: "flex",
           flexDirection: "column",
           gap: "14px",
+          color: "var(--theme-card-text)",
         }}
       >
         <span
@@ -85,18 +83,18 @@ export default function FeedbackView({
             letterSpacing: "0.14em",
             fontSize: "11px",
             fontWeight: 800,
-            color: "#D84315",
+            color: "#FF8A65",
           }}
         >
           Notice
         </span>
-        <h2 style={{ fontSize: "24px", fontWeight: 800, color: "var(--color-ink)" }}>
+        <h2 style={{ fontSize: "24px", fontWeight: 800, color: "var(--theme-card-text)" }}>
           I couldn&apos;t check this submission
         </h2>
-        <p style={{ fontSize: "15px", lineHeight: 1.5, color: "var(--color-ink)" }}>
+        <p style={{ fontSize: "15px", lineHeight: 1.5, color: "var(--theme-card-text)" }}>
           {result.reason}
         </p>
-        <p style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>
+        <p style={{ fontSize: "13px", color: "var(--theme-card-text-muted)" }}>
           Try submitting a real, finished piece of work — an email, a doc, or your own explanation of a concept.
         </p>
       </div>
@@ -122,11 +120,11 @@ export default function FeedbackView({
           gap: "8px",
           padding: "8px 16px",
           borderRadius: "var(--radius-pill)",
-          background: isOpen ? "var(--color-ink)" : style.bg,
-          color: isOpen ? "var(--color-paper)" : style.color,
-          border: `1px solid ${isOpen ? "var(--color-ink)" : style.border}`,
+          background: isOpen ? "var(--color-lime)" : style.bg,
+          color: isOpen ? "var(--color-ink)" : style.color,
+          border: `1px solid ${isOpen ? "var(--color-lime)" : style.border}`,
           fontSize: "13px",
-          fontWeight: 700,
+          fontWeight: 800,
           cursor: "pointer",
           transition: "all var(--duration-fast) var(--ease-standard)",
         }}
@@ -139,8 +137,8 @@ export default function FeedbackView({
             textTransform: "uppercase",
             padding: "2px 8px",
             borderRadius: "var(--radius-pill)",
-            background: isOpen ? "rgba(255, 252, 245, 0.2)" : "rgba(255, 255, 255, 0.7)",
-            color: isOpen ? "var(--color-paper)" : style.color,
+            background: isOpen ? "rgba(23, 25, 25, 0.15)" : "rgba(0, 0, 0, 0.2)",
+            color: isOpen ? "var(--color-ink)" : style.color,
           }}
         >
           {r.level}
@@ -155,8 +153,8 @@ export default function FeedbackView({
   return (
     <div
       style={{
-        background: "#ffffff",
-        border: "1px solid var(--color-border)",
+        background: "var(--theme-card-surface)",
+        border: "1px solid var(--theme-card-border)",
         borderRadius: "var(--radius-card)",
         padding: "clamp(24px, 4vw, 36px)",
         display: "flex",
@@ -167,8 +165,9 @@ export default function FeedbackView({
       {/* 1. Fix This First Headline Box */}
       <div
         style={{
-          background: "var(--color-ink)",
-          color: "var(--color-paper)",
+          background: "var(--theme-card-bg)",
+          color: "var(--theme-card-text)",
+          border: "1px solid var(--theme-card-border)",
           borderRadius: "24px",
           padding: "24px 28px",
           display: "flex",
@@ -209,7 +208,7 @@ export default function FeedbackView({
             letterSpacing: "0.12em",
             fontSize: "11px",
             fontWeight: 800,
-            color: "var(--color-text-muted)",
+            color: "var(--theme-card-text-muted)",
           }}
         >
           Layer 1: Is the work good?
@@ -227,7 +226,7 @@ export default function FeedbackView({
             letterSpacing: "0.12em",
             fontSize: "11px",
             fontWeight: 800,
-            color: "var(--color-text-muted)",
+            color: "var(--theme-card-text-muted)",
           }}
         >
           Layer 2: Did you use AI well?
@@ -241,8 +240,8 @@ export default function FeedbackView({
       {selectedCriterion && selectedResult && (
         <div
           style={{
-            background: "var(--color-paper)",
-            border: "1px solid var(--color-border)",
+            background: "var(--theme-card-bg)",
+            border: "1px solid var(--theme-card-border)",
             borderRadius: "20px",
             padding: "20px 24px",
             display: "flex",
@@ -251,7 +250,7 @@ export default function FeedbackView({
           }}
         >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: "16px", fontWeight: 800, color: "var(--color-ink)" }}>
+            <span style={{ fontSize: "16px", fontWeight: 800, color: "var(--theme-card-text)" }}>
               {selectedCriterion.label}
             </span>
             <span
@@ -271,16 +270,16 @@ export default function FeedbackView({
 
           <div style={{ display: "grid", gap: "10px", fontSize: "14px", lineHeight: 1.5 }}>
             <div>
-              <strong style={{ color: "var(--color-ink)" }}>What I saw: </strong>
-              <span style={{ color: "var(--color-text-muted)" }}>{selectedResult.evidence}</span>
+              <strong style={{ color: "var(--theme-card-text)" }}>What I saw: </strong>
+              <span style={{ color: "var(--theme-card-text-muted)" }}>{selectedResult.evidence}</span>
             </div>
             <div>
-              <strong style={{ color: "var(--color-ink)" }}>Next step: </strong>
-              <span style={{ color: "var(--color-text-muted)" }}>{selectedResult.next_step}</span>
+              <strong style={{ color: "var(--theme-card-text)" }}>Next step: </strong>
+              <span style={{ color: "var(--theme-card-text-muted)" }}>{selectedResult.next_step}</span>
             </div>
             <div>
-              <strong style={{ color: "var(--color-ink)" }}>Standard: </strong>
-              <span style={{ color: "var(--color-text-muted)" }}>{selectedResult.standard}</span>
+              <strong style={{ color: "var(--theme-card-text)" }}>Standard: </strong>
+              <span style={{ color: "var(--theme-card-text-muted)" }}>{selectedResult.standard}</span>
             </div>
           </div>
         </div>
@@ -290,8 +289,8 @@ export default function FeedbackView({
       {showNudge && (
         <div
           style={{
-            background: "rgba(201, 255, 54, 0.12)",
-            border: "1px solid rgba(201, 255, 54, 0.4)",
+            background: "var(--theme-card-bg)",
+            border: "1px solid var(--theme-card-border)",
             borderRadius: "18px",
             padding: "14px 18px",
             display: "flex",
@@ -301,7 +300,7 @@ export default function FeedbackView({
             gap: "10px",
           }}
         >
-          <div style={{ fontSize: "13px", color: "var(--color-ink)" }}>
+          <div style={{ fontSize: "13px", color: "var(--theme-card-text)" }}>
             Got a sec? Tell us how this feedback landed for you.
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -313,9 +312,9 @@ export default function FeedbackView({
               style={{
                 padding: "6px 14px",
                 borderRadius: "var(--radius-pill)",
-                background: "var(--color-ink)",
-                color: "var(--color-paper)",
-                fontWeight: 700,
+                background: "var(--color-lime)",
+                color: "var(--color-ink)",
+                fontWeight: 800,
                 fontSize: "12px",
                 border: "none",
                 cursor: "pointer",
@@ -329,7 +328,7 @@ export default function FeedbackView({
                 background: "none",
                 border: "none",
                 fontSize: "12px",
-                color: "var(--color-text-muted)",
+                color: "var(--theme-card-text-muted)",
                 cursor: "pointer",
                 padding: "4px",
               }}

@@ -44,7 +44,7 @@ export default function PurposePicker({ onPick }: { onPick: (t: string) => void 
             fontWeight: 800,
             lineHeight: 1.05,
             letterSpacing: "-0.04em",
-            color: "var(--color-ink)",
+            color: "var(--theme-card-text)",
           }}
         >
           What do you want to check?
@@ -66,8 +66,9 @@ export default function PurposePicker({ onPick }: { onPick: (t: string) => void 
               textAlign: "left",
               padding: "24px",
               borderRadius: "var(--radius-card)",
-              background: "#ffffff",
-              border: "1px solid var(--color-border)",
+              background: "var(--theme-card-surface)",
+              border: "1px solid var(--theme-card-border)",
+              color: "var(--theme-card-text)",
               display: "flex",
               flexDirection: "column",
               justifyContent: "space-between",
@@ -78,12 +79,12 @@ export default function PurposePicker({ onPick }: { onPick: (t: string) => void 
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-4px)";
-              e.currentTarget.style.borderColor = "var(--color-ink)";
-              e.currentTarget.style.boxShadow = "0 12px 26px rgba(0,0,0,0.06)";
+              e.currentTarget.style.borderColor = "var(--color-lime)";
+              e.currentTarget.style.boxShadow = "0 12px 26px rgba(0,0,0,0.1)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = "translateY(0)";
-              e.currentTarget.style.borderColor = "var(--color-border)";
+              e.currentTarget.style.borderColor = "var(--theme-card-border)";
               e.currentTarget.style.boxShadow = "none";
             }}
           >
@@ -96,13 +97,14 @@ export default function PurposePicker({ onPick }: { onPick: (t: string) => void 
                   letterSpacing: "0.1em",
                   padding: "4px 10px",
                   borderRadius: "var(--radius-pill)",
-                  background: "rgba(23, 25, 25, 0.06)",
-                  color: "var(--color-ink)",
+                  background: "var(--theme-card-surface-hover)",
+                  color: "var(--theme-card-text)",
+                  border: "1px solid var(--theme-card-border)",
                 }}
               >
                 {o.badge}
               </span>
-              <span style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-ink)" }}>↗</span>
+              <span style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-lime)" }}>↗</span>
             </div>
 
             <div>
@@ -112,13 +114,13 @@ export default function PurposePicker({ onPick }: { onPick: (t: string) => void 
                   fontWeight: 800,
                   lineHeight: 1.25,
                   letterSpacing: "-0.02em",
-                  color: "var(--color-ink)",
+                  color: "var(--theme-card-text)",
                   marginBottom: "8px",
                 }}
               >
                 {o.q}
               </div>
-              <div style={{ fontSize: "14px", lineHeight: 1.4, color: "var(--color-text-muted)" }}>
+              <div style={{ fontSize: "14px", lineHeight: 1.4, color: "var(--theme-card-text-muted)" }}>
                 {o.hint}
               </div>
             </div>

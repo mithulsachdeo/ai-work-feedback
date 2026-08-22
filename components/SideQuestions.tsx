@@ -42,7 +42,7 @@ export default function SideQuestions({
     <div
       style={{
         marginTop: "20px",
-        borderTop: "1px solid var(--color-border)",
+        borderTop: "1px solid var(--theme-card-border)",
         paddingTop: "20px",
         display: "flex",
         flexDirection: "column",
@@ -50,10 +50,10 @@ export default function SideQuestions({
       }}
     >
       <div>
-        <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--color-ink)", marginBottom: "4px" }}>
+        <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--theme-card-text)", marginBottom: "4px" }}>
           Have a question about this feedback?
         </div>
-        <p style={{ fontSize: "12px", color: "var(--color-text-muted)" }}>
+        <p style={{ fontSize: "12px", color: "var(--theme-card-text-muted)" }}>
           Ask for clarification, how to rephrase a section, or how to verify a fact.
         </p>
       </div>
@@ -70,24 +70,25 @@ export default function SideQuestions({
             flex: "1 1 240px",
             padding: "12px 18px",
             borderRadius: "var(--radius-pill)",
-            border: "1px solid var(--color-border)",
-            background: "#ffffff",
+            border: "1px solid var(--theme-input-border)",
+            background: "var(--theme-input-bg)",
             fontSize: "14px",
-            color: "var(--color-ink)",
+            color: "var(--theme-input-text)",
             outline: "none",
           }}
         />
         <button
+          type="button"
           onClick={ask}
           disabled={busy || !q.trim()}
           style={{
             padding: "12px 22px",
             borderRadius: "var(--radius-pill)",
-            background: "var(--color-ink)",
-            color: "var(--color-paper)",
-            fontWeight: 700,
+            background: "var(--theme-card-surface-hover)",
+            color: "var(--theme-card-text)",
+            border: "1px solid var(--theme-card-border)",
+            fontWeight: 800,
             fontSize: "14px",
-            border: "none",
             opacity: busy || !q.trim() ? 0.5 : 1,
             cursor: busy || !q.trim() ? "not-allowed" : "pointer",
             transition: "transform var(--duration-fast) var(--ease-standard)",
@@ -100,13 +101,13 @@ export default function SideQuestions({
       {a && (
         <div
           style={{
-            background: "rgba(108, 99, 245, 0.07)",
-            border: "1px solid rgba(108, 99, 245, 0.2)",
+            background: "rgba(108, 99, 245, 0.1)",
+            border: "1px solid rgba(108, 99, 245, 0.3)",
             borderRadius: "18px",
             padding: "16px 20px",
             fontSize: "14px",
             lineHeight: 1.6,
-            color: "var(--color-ink)",
+            color: "var(--theme-card-text)",
           }}
         >
           <div style={{ fontWeight: 800, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-blue)", marginBottom: "6px" }}>

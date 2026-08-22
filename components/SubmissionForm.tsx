@@ -57,8 +57,8 @@ export default function SubmissionForm({
   return (
     <div
       style={{
-        background: "#ffffff",
-        border: "1px solid var(--color-border)",
+        background: "var(--theme-card-surface)",
+        border: "1px solid var(--theme-card-border)",
         borderRadius: "var(--radius-card)",
         padding: "clamp(24px, 4vw, 36px)",
         display: "flex",
@@ -83,8 +83,8 @@ export default function SubmissionForm({
             style={{
               fontSize: "12px",
               fontWeight: 600,
-              color: "var(--color-text-muted)",
-              background: "rgba(23, 25, 25, 0.05)",
+              color: "var(--theme-card-text-muted)",
+              background: "var(--theme-card-surface-hover)",
               padding: "4px 10px",
               borderRadius: "var(--radius-pill)",
             }}
@@ -92,7 +92,7 @@ export default function SubmissionForm({
             {isLateNight ? LATE_NIGHT_LINE : HIGH_STAKES_LINE}
           </span>
         </div>
-        <p style={{ fontSize: "14px", lineHeight: 1.5, color: "var(--color-ink)" }}>
+        <p style={{ fontSize: "14px", lineHeight: 1.5, color: "var(--theme-card-text)" }}>
           {helpInfo.desc}
         </p>
       </div>
@@ -102,7 +102,7 @@ export default function SubmissionForm({
           <div
             onClick={handleCopyPrompt}
             style={{
-              background: "rgba(108, 99, 245, 0.06)",
+              background: "rgba(108, 99, 245, 0.08)",
               border: "1px dashed var(--color-blue)",
               borderRadius: "16px",
               padding: "14px 18px",
@@ -113,7 +113,7 @@ export default function SubmissionForm({
               gap: "12px",
             }}
           >
-            <div style={{ fontSize: "13px", color: "var(--color-ink)", fontFamily: "monospace" }}>
+            <div style={{ fontSize: "13px", color: "var(--theme-card-text)", fontFamily: "monospace" }}>
               &ldquo;{GEN_PROMPT}&rdquo;
             </div>
             <span
@@ -136,7 +136,7 @@ export default function SubmissionForm({
                 display: "block",
                 fontSize: "13px",
                 fontWeight: 700,
-                color: "var(--color-ink)",
+                color: "var(--theme-card-text)",
                 marginBottom: "6px",
               }}
             >
@@ -151,11 +151,11 @@ export default function SubmissionForm({
                 width: "100%",
                 padding: "14px 16px",
                 borderRadius: "16px",
-                border: "1px solid var(--color-border)",
-                background: "var(--color-paper)",
+                border: "1px solid var(--theme-input-border)",
+                background: "var(--theme-input-bg)",
                 fontSize: "14px",
                 lineHeight: 1.5,
-                color: "var(--color-ink)",
+                color: "var(--theme-input-text)",
                 outline: "none",
                 resize: "vertical",
               }}
@@ -170,7 +170,7 @@ export default function SubmissionForm({
             display: "block",
             fontSize: "13px",
             fontWeight: 700,
-            color: "var(--color-ink)",
+            color: "var(--theme-card-text)",
             marginBottom: "6px",
           }}
         >
@@ -184,10 +184,10 @@ export default function SubmissionForm({
             width: "100%",
             padding: "14px 16px",
             borderRadius: "14px",
-            border: "1px solid var(--color-border)",
-            background: "#ffffff",
+            border: "1px solid var(--theme-input-border)",
+            background: "var(--theme-input-bg)",
             fontSize: "15px",
-            color: "var(--color-ink)",
+            color: "var(--theme-input-text)",
             outline: "none",
           }}
         />
@@ -199,7 +199,7 @@ export default function SubmissionForm({
             display: "block",
             fontSize: "13px",
             fontWeight: 700,
-            color: "var(--color-ink)",
+            color: "var(--theme-card-text)",
             marginBottom: "6px",
           }}
         >
@@ -220,20 +220,20 @@ export default function SubmissionForm({
             width: "100%",
             padding: "16px",
             borderRadius: "16px",
-            border: "1px solid var(--color-border)",
-            background: "#ffffff",
+            border: "1px solid var(--theme-input-border)",
+            background: "var(--theme-input-bg)",
             fontSize: "14px",
             lineHeight: 1.6,
-            color: "var(--color-ink)",
+            color: "var(--theme-input-text)",
             outline: "none",
             resize: "vertical",
           }}
         />
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
-          <span style={{ fontSize: "11px", color: "var(--color-text-muted)" }}>
+          <span style={{ fontSize: "11px", color: "var(--theme-card-text-muted)" }}>
             {PASTE_BOX_NUDGE}
           </span>
-          <span style={{ fontSize: "11px", color: text.length >= 20 ? "var(--color-mint)" : "var(--color-text-muted)" }}>
+          <span style={{ fontSize: "11px", color: text.length >= 20 ? "var(--color-mint)" : "var(--theme-card-text-muted)" }}>
             {text.length} chars {text.length < 20 ? "(minimum 20)" : "✓"}
           </span>
         </div>
@@ -246,7 +246,7 @@ export default function SubmissionForm({
           alignItems: "center",
           flexWrap: "wrap",
           gap: "16px",
-          borderTop: "1px solid var(--color-border)",
+          borderTop: "1px solid var(--theme-card-border)",
           paddingTop: "20px",
         }}
       >
@@ -256,7 +256,7 @@ export default function SubmissionForm({
             alignItems: "center",
             gap: "8px",
             fontSize: "13px",
-            color: "var(--color-text-muted)",
+            color: "var(--theme-card-text-muted)",
             cursor: "pointer",
           }}
         >
@@ -264,7 +264,7 @@ export default function SubmissionForm({
             type="checkbox"
             checked={doNotStore}
             onChange={(e) => setDoNotStore(e.target.checked)}
-            style={{ width: "16px", height: "16px", accentColor: "var(--color-ink)" }}
+            style={{ width: "16px", height: "16px", accentColor: "var(--color-lime)" }}
           />
           Don&apos;t store this submission (we still check it, we just don&apos;t keep the text)
         </label>

@@ -74,7 +74,7 @@ export default function FeedbackWidget({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(23, 25, 25, 0.6)",
+        background: "rgba(0, 0, 0, 0.7)",
         backdropFilter: "blur(4px)",
         display: "flex",
         alignItems: "center",
@@ -85,7 +85,9 @@ export default function FeedbackWidget({
     >
       <div
         style={{
-          background: "#ffffff",
+          background: "var(--theme-card-bg)",
+          color: "var(--theme-card-text)",
+          border: "1px solid var(--theme-card-border)",
           borderRadius: "var(--radius-card)",
           padding: "clamp(24px, 4vw, 36px)",
           width: "100%",
@@ -93,16 +95,16 @@ export default function FeedbackWidget({
           display: "flex",
           flexDirection: "column",
           gap: "20px",
-          boxShadow: "0 24px 48px rgba(0,0,0,0.18)",
+          boxShadow: "0 24px 48px rgba(0,0,0,0.3)",
         }}
       >
         {submitted ? (
           <div style={{ textAlign: "center", padding: "24px 0", display: "grid", gap: "10px" }}>
             <div style={{ fontSize: "32px" }}>🙌</div>
-            <h3 style={{ fontSize: "22px", fontWeight: 800, color: "var(--color-ink)" }}>
+            <h3 style={{ fontSize: "22px", fontWeight: 800, color: "var(--theme-card-text)" }}>
               Thank you for the feedback!
             </h3>
-            <p style={{ fontSize: "14px", color: "var(--color-text-muted)" }}>
+            <p style={{ fontSize: "14px", color: "var(--theme-card-text-muted)" }}>
               Your input helps us make the coach more accurate and useful.
             </p>
           </div>
@@ -128,19 +130,19 @@ export default function FeedbackWidget({
                   fontWeight: 800,
                   lineHeight: 1.2,
                   letterSpacing: "-0.03em",
-                  color: "var(--color-ink)",
+                  color: "var(--theme-card-text)",
                 }}
               >
                 How was your experience?
               </h3>
-              <p style={{ fontSize: "13px", color: "var(--color-text-muted)", marginTop: "4px" }}>
+              <p style={{ fontSize: "13px", color: "var(--theme-card-text-muted)", marginTop: "4px" }}>
                 Tell us how the feedback landed and what we should improve.
               </p>
             </div>
 
             {/* 1. Rating 1-5 */}
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "8px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "8px", color: "var(--theme-card-text)" }}>
                 Overall Rating (1–5)
               </label>
               <div style={{ display: "flex", gap: "8px" }}>
@@ -155,9 +157,9 @@ export default function FeedbackWidget({
                         flex: 1,
                         padding: "10px 0",
                         borderRadius: "var(--radius-pill)",
-                        border: `1px solid ${isSelected ? "var(--color-ink)" : "var(--color-border)"}`,
-                        background: isSelected ? "var(--color-ink)" : "var(--color-paper)",
-                        color: isSelected ? "var(--color-paper)" : "var(--color-ink)",
+                        border: `1px solid ${isSelected ? "var(--color-lime)" : "var(--theme-input-border)"}`,
+                        background: isSelected ? "var(--color-lime)" : "var(--theme-input-bg)",
+                        color: isSelected ? "var(--color-ink)" : "var(--theme-input-text)",
                         fontWeight: 800,
                         fontSize: "15px",
                         cursor: "pointer",
@@ -173,7 +175,7 @@ export default function FeedbackWidget({
 
             {/* 2. Tag checkboxes / pills */}
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "8px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "8px", color: "var(--theme-card-text)" }}>
                 What stood out? (select any)
               </label>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
@@ -187,9 +189,9 @@ export default function FeedbackWidget({
                       style={{
                         padding: "6px 12px",
                         borderRadius: "var(--radius-pill)",
-                        border: `1px solid ${isSelected ? "var(--color-blue)" : "var(--color-border)"}`,
-                        background: isSelected ? "rgba(108, 99, 245, 0.1)" : "#ffffff",
-                        color: isSelected ? "var(--color-blue)" : "var(--color-ink)",
+                        border: `1px solid ${isSelected ? "var(--color-blue)" : "var(--theme-card-border)"}`,
+                        background: isSelected ? "rgba(108, 99, 245, 0.2)" : "var(--theme-card-surface)",
+                        color: isSelected ? "var(--color-blue)" : "var(--theme-card-text)",
                         fontSize: "12px",
                         fontWeight: 700,
                         cursor: "pointer",
@@ -205,7 +207,7 @@ export default function FeedbackWidget({
 
             {/* 3. Optional Free text */}
             <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px" }}>
+              <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "var(--theme-card-text)" }}>
                 Anything else? (optional)
               </label>
               <textarea
@@ -217,11 +219,11 @@ export default function FeedbackWidget({
                   width: "100%",
                   padding: "12px 14px",
                   borderRadius: "14px",
-                  border: "1px solid var(--color-border)",
-                  background: "#ffffff",
+                  border: "1px solid var(--theme-input-border)",
+                  background: "var(--theme-input-bg)",
                   fontSize: "13px",
                   lineHeight: 1.5,
-                  color: "var(--color-ink)",
+                  color: "var(--theme-input-text)",
                   outline: "none",
                   resize: "vertical",
                 }}
@@ -259,11 +261,11 @@ export default function FeedbackWidget({
                 style={{
                   padding: "12px 18px",
                   borderRadius: "var(--radius-pill)",
-                  background: "rgba(23, 25, 25, 0.06)",
-                  color: "var(--color-ink)",
+                  background: "var(--theme-card-surface)",
+                  color: "var(--theme-card-text)",
+                  border: "1px solid var(--theme-card-border)",
                   fontWeight: 700,
                   fontSize: "14px",
-                  border: "none",
                   cursor: "pointer",
                 }}
               >

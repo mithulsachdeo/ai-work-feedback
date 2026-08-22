@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import posthog from "posthog-js";
 import SignIn from "@/components/SignIn";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Home() {
   useEffect(() => {
@@ -21,8 +22,9 @@ export default function Home() {
     >
       <section
         style={{
-          background: "var(--color-ink)",
-          color: "var(--color-paper)",
+          background: "var(--theme-card-bg)",
+          color: "var(--theme-card-text)",
+          border: "1px solid var(--theme-card-border)",
           borderRadius: "var(--radius-section)",
           padding: "clamp(36px, 6vw, 80px) clamp(24px, 5vw, 64px)",
           display: "grid",
@@ -30,9 +32,10 @@ export default function Home() {
           gap: "40px",
           position: "relative",
           overflow: "hidden",
+          transition: "background var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard)",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "780px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
             <span
               style={{
@@ -42,24 +45,28 @@ export default function Home() {
                 fontWeight: 800,
                 padding: "6px 14px",
                 borderRadius: "var(--radius-pill)",
-                background: "rgba(255, 252, 245, 0.12)",
+                background: "var(--theme-card-surface)",
                 color: "var(--color-lime)",
               }}
             >
               Signal / learn
             </span>
-            <span style={{ fontSize: "12px", opacity: 0.6, color: "var(--color-paper)" }}>
+            <span style={{ fontSize: "12px", color: "var(--theme-card-text-muted)" }}>
               Feedback coach for AI-assisted work
             </span>
           </div>
 
+          <ThemeToggle />
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: "24px", maxWidth: "780px" }}>
           <h1
             style={{
               fontSize: "clamp(42px, 6.5vw, 84px)",
               lineHeight: 0.94,
               letterSpacing: "-0.055em",
               fontWeight: 800,
-              color: "var(--color-paper)",
+              color: "var(--theme-card-text)",
             }}
           >
             Is your AI-assisted work <span style={{ color: "var(--color-lime)" }}>actually good?</span>
@@ -69,7 +76,7 @@ export default function Home() {
             style={{
               fontSize: "clamp(16px, 2vw, 20px)",
               lineHeight: 1.5,
-              color: "rgba(255, 252, 245, 0.78)",
+              color: "var(--theme-card-text-muted)",
               maxWidth: "640px",
             }}
           >
@@ -86,12 +93,12 @@ export default function Home() {
             display: "flex",
             flexWrap: "wrap",
             gap: "10px",
-            borderTop: "1px solid rgba(255, 252, 245, 0.15)",
+            borderTop: "1px solid var(--theme-card-border)",
             paddingTop: "24px",
             alignItems: "center",
           }}
         >
-          <span style={{ fontSize: "12px", color: "rgba(255, 252, 245, 0.5)", fontWeight: 700, marginRight: "8px" }}>
+          <span style={{ fontSize: "12px", color: "var(--theme-card-text-muted)", fontWeight: 700, marginRight: "8px" }}>
             Check any of:
           </span>
           {[
@@ -107,9 +114,9 @@ export default function Home() {
                 fontWeight: 700,
                 padding: "6px 14px",
                 borderRadius: "var(--radius-pill)",
-                background: "rgba(255, 252, 245, 0.08)",
-                color: "var(--color-paper)",
-                border: "1px solid rgba(255, 252, 245, 0.15)",
+                background: "var(--theme-card-surface)",
+                color: "var(--theme-card-text)",
+                border: "1px solid var(--theme-card-border)",
                 transform: `rotate(${pill.rot})`,
               }}
             >

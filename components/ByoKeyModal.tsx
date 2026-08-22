@@ -23,7 +23,7 @@ export default function ByoKeyModal({
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(23, 25, 25, 0.6)",
+        background: "rgba(0, 0, 0, 0.7)",
         backdropFilter: "blur(4px)",
         display: "flex",
         alignItems: "center",
@@ -34,7 +34,9 @@ export default function ByoKeyModal({
     >
       <div
         style={{
-          background: "#ffffff",
+          background: "var(--theme-card-bg)",
+          color: "var(--theme-card-text)",
+          border: "1px solid var(--theme-card-border)",
           borderRadius: "var(--radius-card)",
           padding: "36px",
           width: "100%",
@@ -42,7 +44,7 @@ export default function ByoKeyModal({
           display: "flex",
           flexDirection: "column",
           gap: "20px",
-          boxShadow: "0 24px 48px rgba(0,0,0,0.18)",
+          boxShadow: "0 24px 48px rgba(0,0,0,0.3)",
         }}
       >
         <div>
@@ -65,19 +67,19 @@ export default function ByoKeyModal({
               fontWeight: 800,
               lineHeight: 1.15,
               letterSpacing: "-0.03em",
-              color: "var(--color-ink)",
+              color: "var(--theme-card-text)",
             }}
           >
             Unlock unlimited, sharper checks
           </h3>
-          <p style={{ fontSize: "14px", lineHeight: 1.5, color: "var(--color-text-muted)", marginTop: "8px" }}>
+          <p style={{ fontSize: "14px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", marginTop: "8px" }}>
             Paste your own API key. It stays in this browser session only — we never store it or send it anywhere except directly to the provider for your checks.
           </p>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px" }}>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "var(--theme-card-text)" }}>
               Select Model Provider
             </label>
             <select
@@ -87,10 +89,10 @@ export default function ByoKeyModal({
                 width: "100%",
                 padding: "12px 16px",
                 borderRadius: "14px",
-                border: "1px solid var(--color-border)",
-                background: "var(--color-paper)",
+                border: "1px solid var(--theme-input-border)",
+                background: "var(--theme-input-bg)",
                 fontSize: "14px",
-                color: "var(--color-ink)",
+                color: "var(--theme-input-text)",
                 outline: "none",
               }}
             >
@@ -101,7 +103,7 @@ export default function ByoKeyModal({
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px" }}>
+            <label style={{ display: "block", fontSize: "13px", fontWeight: 700, marginBottom: "6px", color: "var(--theme-card-text)" }}>
               API Key
             </label>
             <input
@@ -116,10 +118,10 @@ export default function ByoKeyModal({
                 width: "100%",
                 padding: "12px 16px",
                 borderRadius: "14px",
-                border: "1px solid var(--color-border)",
-                background: "#ffffff",
+                border: "1px solid var(--theme-input-border)",
+                background: "var(--theme-input-bg)",
                 fontSize: "14px",
-                color: "var(--color-ink)",
+                color: "var(--theme-input-text)",
                 outline: "none",
               }}
             />
@@ -128,6 +130,7 @@ export default function ByoKeyModal({
 
         <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={!key.trim()}
             style={{
@@ -146,15 +149,16 @@ export default function ByoKeyModal({
             Use my key ↗
           </button>
           <button
+            type="button"
             onClick={onClose}
             style={{
               padding: "14px 20px",
               borderRadius: "var(--radius-pill)",
-              background: "rgba(23, 25, 25, 0.06)",
-              color: "var(--color-ink)",
+              background: "var(--theme-card-surface)",
+              color: "var(--theme-card-text)",
+              border: "1px solid var(--theme-card-border)",
               fontWeight: 700,
               fontSize: "14px",
-              border: "none",
               cursor: "pointer",
             }}
           >

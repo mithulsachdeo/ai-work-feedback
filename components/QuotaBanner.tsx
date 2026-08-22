@@ -18,11 +18,11 @@ export default function QuotaBanner({
           gap: "8px",
           padding: "6px 14px",
           borderRadius: "var(--radius-pill)",
-          background: "rgba(89, 201, 149, 0.12)",
-          border: "1px solid rgba(89, 201, 149, 0.3)",
+          background: "rgba(89, 201, 149, 0.15)",
+          border: "1px solid rgba(89, 201, 149, 0.4)",
           fontSize: "12px",
           fontWeight: 700,
-          color: "#1B7A42",
+          color: "#81C784",
         }}
       >
         <span>●</span>
@@ -40,10 +40,10 @@ export default function QuotaBanner({
         gap: "8px",
         padding: "6px 14px",
         borderRadius: "var(--radius-pill)",
-        background: "rgba(23, 25, 25, 0.05)",
-        border: "1px solid var(--color-border)",
+        background: "var(--theme-card-surface)",
+        border: "1px solid var(--theme-card-border)",
         fontSize: "12px",
-        color: "var(--color-ink)",
+        color: "var(--theme-card-text)",
       }}
     >
       <span>
@@ -55,6 +55,7 @@ export default function QuotaBanner({
       </span>
       <span style={{ opacity: 0.4 }}>•</span>
       <button
+        type="button"
         onClick={onUnlock}
         style={{
           background: "none",
