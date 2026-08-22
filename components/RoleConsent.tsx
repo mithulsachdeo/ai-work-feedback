@@ -33,7 +33,7 @@ export default function RoleConsent({ userId, onDone }: { userId: string; onDone
       style={{
         maxWidth: "460px",
         margin: "3rem auto",
-        background: "var(--theme-card-surface)",
+        background: "var(--theme-card-bg)",
         border: "1px solid var(--theme-card-border)",
         borderRadius: "var(--radius-card)",
         padding: "clamp(24px, 4vw, 36px)",
