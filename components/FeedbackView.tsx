@@ -6,23 +6,29 @@ import type { EvaluationResult, CriterionId, Level } from "@/lib/llm/types";
 import SideQuestions from "./SideQuestions";
 import FeedbackWidget from "./FeedbackWidget";
 
-const LEVEL_STYLES: Record<Level, { bg: string; color: string; border: string; label: string }> = {
+const LEVEL_STYLES: Record<Level, { bg: string; color: string; border: string; badgeBg: string; badgeColor: string; label: string }> = {
   Emerging: {
-    bg: "rgba(255, 112, 67, 0.15)",
-    color: "#FF8A65",
-    border: "rgba(255, 112, 67, 0.4)",
+    bg: "var(--level-emerging-bg)",
+    color: "var(--level-emerging-fg)",
+    border: "var(--level-emerging-border)",
+    badgeBg: "var(--level-emerging-badge-bg)",
+    badgeColor: "var(--level-emerging-badge-fg)",
     label: "Emerging",
   },
   Solid: {
-    bg: "rgba(255, 193, 7, 0.16)",
-    color: "#FFD54F",
-    border: "rgba(255, 193, 7, 0.45)",
+    bg: "var(--level-solid-bg)",
+    color: "var(--level-solid-fg)",
+    border: "var(--level-solid-border)",
+    badgeBg: "var(--level-solid-badge-bg)",
+    badgeColor: "var(--level-solid-badge-fg)",
     label: "Solid",
   },
   Strong: {
-    bg: "rgba(89, 201, 149, 0.18)",
-    color: "#81C784",
-    border: "rgba(89, 201, 149, 0.5)",
+    bg: "var(--level-strong-bg)",
+    color: "var(--level-strong-fg)",
+    border: "var(--level-strong-border)",
+    badgeBg: "var(--level-strong-badge-bg)",
+    badgeColor: "var(--level-strong-badge-fg)",
     label: "Strong",
   },
 };
@@ -137,8 +143,8 @@ export default function FeedbackView({
             textTransform: "uppercase",
             padding: "2px 8px",
             borderRadius: "var(--radius-pill)",
-            background: isOpen ? "rgba(23, 25, 25, 0.15)" : "rgba(0, 0, 0, 0.2)",
-            color: isOpen ? "var(--color-ink)" : style.color,
+            background: isOpen ? "rgba(23, 25, 25, 0.15)" : style.badgeBg,
+            color: isOpen ? "var(--color-ink)" : style.badgeColor,
           }}
         >
           {r.level}
