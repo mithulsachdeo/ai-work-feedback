@@ -1,0 +1,18 @@
+.guide { font-size: 16.5px; line-height: 1.65; }
+.guide > *:first-child { margin-top: 0; }
+.guide h1 { font-size: clamp(30px, 5vw, 48px); line-height: 1.05; letter-spacing: -0.04em; font-weight: 800; margin: 0 0 10px; }
+.guide h2 { font-size: clamp(22px, 3.4vw, 30px); letter-spacing: -0.03em; font-weight: 800; margin: 46px 0 6px; }
+.guide h3 { font-size: 18px; font-weight: 800; letter-spacing: -0.015em; margin: 28px 0 6px; }
+.guide p { margin: 14px 0; }
+.guide strong { font-weight: 700; }
+.guide em { font-style: italic; color: var(--theme-card-text-muted); }
+.guide a { color: var(--color-blue); text-decoration: underline; text-underline-offset: 2px; }
+.guide ul, .guide ol { padding-left: 22px; margin: 14px 0; }
+.guide li { margin: 8px 0; }
+.guide hr { border: none; border-top: 1px solid var(--theme-card-border); margin: 40px 0; }
+.guide blockquote { border-left: 3px solid var(--color-lime); margin: 18px 0; padding: 4px 0 4px 18px; color: var(--theme-card-text-muted); }
+.guide code { background: var(--theme-card-surface); padding: 2px 6px; border-radius: 6px; font-size: 0.9em; }
+.guide table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 15px; display: block; overflow-x: auto; }
+.guide th, .guide td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--theme-card-border); vertical-align: top; }
+.guide thead th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--theme-card-text-muted); white-space: nowrap; }
+.guide tbody tr:last-child td { border-bottom: none; }
