@@ -240,6 +240,24 @@ export default function AppPage() {
             >
               Tell us
             </button>
+            <a
+              href="/guide"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                background: "none",
+                border: "1px solid var(--theme-card-border)",
+                borderRadius: "var(--radius-pill)",
+                padding: "6px 14px",
+                fontSize: "12px",
+                fontWeight: 700,
+                color: "var(--theme-card-text)",
+                textDecoration: "none",
+                cursor: "pointer",
+              }}
+            >
+              Guide
+            </a>
             <ThemeToggle />
           </div>
         </header>
