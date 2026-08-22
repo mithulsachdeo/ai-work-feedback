@@ -20,6 +20,21 @@ const HELP: Record<string, { title: string; desc: string }> = {
   },
 };
 
+const INTENT_FIELD: Record<string, { label: string; placeholder: string }> = {
+  work_product: {
+    label: "What is this, and who is it for?",
+    placeholder: "e.g. email to my VP proposing we delay launch by a week",
+  },
+  implementation_logic: {
+    label: "What did you want to build?",
+    placeholder: "e.g. a flow that files new invoices into the right client folder",
+  },
+  concept_articulation: {
+    label: "What are you explaining, and to whom?",
+    placeholder: "e.g. my understanding of how APIs work",
+  },
+};
+
 function PromptScaffold({ prompt, copied, onCopy }: { prompt: string; copied: boolean; onCopy: () => void }) {
   return (
     <div
@@ -86,6 +101,7 @@ export default function SubmissionForm({
   const isLateNight = new Date().getHours() >= 21 || new Date().getHours() < 5;
   const canSubmit = text.trim().length >= 20 && intent.trim().length >= 3;
   const helpInfo = HELP[type] ?? { title: "Submit Work", desc: "Paste your work below for evaluation." };
+  const intentField = INTENT_FIELD[type] ?? { label: "What is this, and who is it for?", placeholder: "e.g. email to my VP proposing we delay launch by a week" };
 
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(GEN_PROMPT);
@@ -155,10 +171,10 @@ export default function SubmissionForm({
       {/* 1. Intent / goal */}
       <div>
         <label style={labelStyle}>
-          {isImpl ? "What did you want to build?" : "What is this, and who is it for?"}
+          {intentField.label}
         </label>
         <input
-          placeholder={isImpl ? "e.g. a flow that files new invoices into the right client folder" : "e.g. email to my VP proposing we delay launch by a week"}
+          placeholder={intentField.placeholder}
           value={intent}
           onChange={(e) => setIntent(e.target.value)}
           style={{ ...fieldBase, padding: "14px 16px", borderRadius: "14px", fontSize: "15px" }}
