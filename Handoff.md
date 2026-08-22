@@ -193,8 +193,19 @@ before moving on — check `git log`, spot-read the actual diffs/files, don't ju
 a "PASS" in a text report. This caught real issues twice (the fail-open bug, and
 confirming the abuse-limit verification hadn't actually run yet because the migration
 wasn't applied). For anything touching the rubric prompt (`lib/llm/prompt.ts`), always
-require a full golden-set rerun (`npm run eval`, 15 cases as of Task 22) before
+require a full golden-set rerun (`npm run eval`, 16 cases as of Task 23) before
 accepting the change — this has caught real regressions, not just theoretical risk.
+
+**Runtime evals — deliberately NOT built (decision 2026-08-23).** We considered online/runtime
+evals (a synchronous LLM-judge on each response, or an async quality-monitoring pipeline) and
+declined both: a synchronous judge is redundant (the output is itself an evaluation; malformed
+output is already caught by schema-validation + one retry) and would double load on the fragile
+shared free-tier key; an async pipeline isn't justified at 40–50 users where outputs can be
+eyeballed. **Agreed substitute:** rerun the offline golden-set *periodically* (not only when the
+prompt changes) to catch model drift — the one real external risk being the provider
+deprecating/changing the model under us, as happened when `gemini-2.0-flash` was delisted.
+Build async sampled evals only at a scale where manual review becomes impossible. (Similarly
+declined: LLM cost caching — see the feature list §9.15.)
 
 ## Open items / not yet done
 

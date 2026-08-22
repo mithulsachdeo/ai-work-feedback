@@ -243,3 +243,28 @@ not a product feature — tracked separately, not folded into the build spec.
 Why deferred: out of scope for a validation-stage MVP graded on the feedback loop and real
 user behavior, not revenue.
 
+**9.15 LLM cost caching (response cache + explicit provider prompt caching) — added 2026-08-23**
+Why deferred (really: not worth building at this scale). Two flavors, both a poor fit right now:
+*Response caching* (reuse a stored answer for an identical request) has a near-zero hit rate —
+every submission is unique personal work judged against a per-user purpose + role, so identical
+requests essentially never recur; caching users' submissions as keys would also cut against the
+privacy positioning. *Explicit provider prompt caching* (cache the static rubric prefix) would
+shave only fractions of a cent off an already-near-zero cost (free tier / pennies on
+`flash-lite`) for a ~1–2k-token static prompt that Gemini already caches implicitly for free.
+Revisit only at high-volume paid scale, and even then lean on the provider's automatic prompt
+caching rather than a hand-built cache.
+
+**9.16 Runtime (online) evals — synchronous judge + async quality-monitoring pipeline — added 2026-08-23**
+Why deferred. The product already has the pieces that matter: strict per-response schema
+validation + one retry (a structural runtime guardrail, §7.1), the `not_evaluable` refusal
+(§3.7), and real-world quality signals (PostHog level distributions §8.2, the revise→improve
+outcome loop §5, the "Tell us" product-feedback ratings, and human spot-check). A *synchronous*
+LLM-judge is redundant — the output is itself an evaluation and malformed output is already
+caught — and would double calls on the fragile shared free-tier key (the same reason a second
+Gemini call was rejected for role analogies). An *async* monitoring pipeline is real infra not
+justified at 40–50 users, where outputs can be reviewed by hand. **Agreed substitute:** rerun
+the offline golden-set (§3.9) *periodically*, not only on prompt edits, to catch model drift —
+the one external risk being the provider deprecating/changing the model (as happened when
+`gemini-2.0-flash` was delisted). Build async *sampled* evals only at a scale where manual
+review becomes impossible.
+
