@@ -16,7 +16,7 @@ const HELP: Record<string, { title: string; desc: string }> = {
   },
   concept_articulation: {
     title: "Checking Conceptual Understanding",
-    desc: "In your own words, write what you think this is and how it works. Don't paste the AI's explanation — that defeats the check.",
+    desc: "Explain a technical or AI concept you're learning, in your own words — what it is and how it works. Don't paste the AI's explanation; that defeats the check.",
   },
 };
 
@@ -30,8 +30,23 @@ const INTENT_FIELD: Record<string, { label: string; placeholder: string }> = {
     placeholder: "e.g. a flow that files new invoices into the right client folder",
   },
   concept_articulation: {
-    label: "What are you explaining, and to whom?",
-    placeholder: "e.g. my understanding of how APIs work",
+    label: "Which concept are you explaining?",
+    placeholder: "e.g. what an API is, or how an LLM answers a question",
+  },
+};
+
+const WORK_FIELD: Record<string, { label: string; placeholder: string }> = {
+  work_product: {
+    label: "The work to evaluate",
+    placeholder: "Paste your work here (minimum 20 characters)…",
+  },
+  implementation_logic: {
+    label: "How the AI says it built it",
+    placeholder: "Paste the AI's explanation of what it built and how…",
+  },
+  concept_articulation: {
+    label: "Your explanation",
+    placeholder: "In your own words — what it is and how it works…",
   },
 };
 
@@ -102,6 +117,7 @@ export default function SubmissionForm({
   const canSubmit = text.trim().length >= 20 && intent.trim().length >= 3;
   const helpInfo = HELP[type] ?? { title: "Submit Work", desc: "Paste your work below for evaluation." };
   const intentField = INTENT_FIELD[type] ?? { label: "What is this, and who is it for?", placeholder: "e.g. email to my VP proposing we delay launch by a week" };
+  const workField = WORK_FIELD[type] ?? { label: "The work to evaluate", placeholder: "Paste your work here (minimum 20 characters)…" };
 
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(GEN_PROMPT);
@@ -184,12 +200,12 @@ export default function SubmissionForm({
       {/* 2. The work / implementation doc (scored artifact) */}
       <div>
         <label style={labelStyle}>
-          {isImpl ? "How the AI says it built it" : "The work to evaluate"}
+          {workField.label}
         </label>
         {isImpl && <PromptScaffold prompt={GEN_PROMPT} copied={copiedPrompt} onCopy={handleCopyPrompt} />}
         <textarea
           rows={isImpl ? 8 : 10}
-          placeholder={isImpl ? "Paste the AI's explanation of what it built and how…" : "Paste your work here (minimum 20 characters)…"}
+          placeholder={workField.placeholder}
           value={text}
           onChange={(e) => setText(e.target.value)}
           style={{ ...fieldBase, padding: "16px", borderRadius: "16px", fontSize: "14px", lineHeight: 1.5, resize: "vertical" }}
