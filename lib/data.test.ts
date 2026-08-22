@@ -32,8 +32,8 @@ test("saveSubmission stores a placeholder when doNotStore is set", async () => {
   expect(calls[0].text).not.toContain("secret");
 });
 
-// (added 2026-08-21, from requirements audit)
-test("saveSubmission stores originalDraft when present", async () => {
+// (updated 2026-08-23, instruction-quality reframe)
+test("saveSubmission stores instructionSummary when present", async () => {
   const calls: any[] = [];
   const fakeSb = {
     from() {
@@ -44,8 +44,8 @@ test("saveSubmission stores originalDraft when present", async () => {
       };
     },
   };
-  await saveSubmission("u1", { type: "implementation_logic", intent: "i", text: "corrected", originalDraft: "raw draft" }, {}, fakeSb as any);
-  expect(calls[0].original_draft).toBe("raw draft");
+  await saveSubmission("u1", { type: "implementation_logic", intent: "i", text: "impl doc", instructionSummary: "what I asked the AI to build" }, {}, fakeSb as any);
+  expect(calls[0].instruction_summary).toBe("what I asked the AI to build");
 });
 
 // (added 2026-08-21, from plan grill)
