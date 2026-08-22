@@ -56,9 +56,15 @@ standard (one sentence describing what "good" looks like for this criterion).
 
 Then pick fix_this_first: the single highest-impact next step across all six, 1-2 sentences.
 
+Then propose up to 3 short follow-up questions the user might genuinely want to ask a
+coach about this feedback — grounded in what was actually found, specific enough to be
+useful (not "tell me more"). If there's nothing natural to ask, return fewer than 3, or
+none.
+
 Return EXACTLY this JSON shape:
 {
   "fix_this_first": "string",
+  "suggested_questions": ["string", "..."],
   "criteria": {
     "accuracy": {"level":"","evidence":"","next_step":"","standard":""},
     "fitness": {"level":"","evidence":"","next_step":"","standard":""},

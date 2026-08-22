@@ -340,7 +340,12 @@ export default function FeedbackView({
       )}
 
       {/* 6. Side-Questions Channel */}
-      <SideQuestions context="reviewing your feedback" byo={byo} />
+      <SideQuestions
+        context="reviewing your feedback"
+        evaluationId={evaluationId}
+        initialSuggestions={result.suggested_questions}
+        byo={byo}
+      />
 
       {/* 7. Feedback Widget Modal if opened from nudge */}
       {showWidget && (

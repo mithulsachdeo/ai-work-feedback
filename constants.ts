@@ -1,4 +1,6 @@
 export const DAILY_QUOTA = 10;
+export const MAX_QUESTIONS_PER_FEEDBACK = 10; // per evaluation_id, server-enforced
+export const ASK_RPM_LIMIT = 5; // per user per rolling minute, server-enforced
 
 export const MODELS = {
   // (updated 2026-08-22, from rubric-validation pass) gemini-2.0-flash no longer listed in

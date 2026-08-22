@@ -12,4 +12,4 @@ export interface CriterionResult { level: Level; evidence: string; next_step: st
 // Discriminated union: either a full evaluation, or a graceful "can't check this".
 export type EvaluationResult =
   | { not_evaluable: true; reason: string }
-  | { not_evaluable?: false; fix_this_first: string; criteria: Record<CriterionId, CriterionResult> };
+  | { not_evaluable?: false; fix_this_first: string; criteria: Record<CriterionId, CriterionResult>; suggested_questions?: string[] };

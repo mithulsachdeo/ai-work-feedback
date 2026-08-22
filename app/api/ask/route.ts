@@ -4,6 +4,9 @@ import { cookies } from "next/headers";
 import { callGemini } from "@/lib/llm/providers/gemini";
 import { callAnthropic } from "@/lib/llm/providers/anthropic";
 import { callOpenAI } from "@/lib/llm/providers/openai";
+import { getServerClient } from "@/lib/supabase/server";
+import { track } from "@/lib/events";
+import { MAX_QUESTIONS_PER_FEEDBACK, ASK_RPM_LIMIT } from "@/constants";
 import type { ProviderName } from "@/lib/llm/types";
 
 const callers = { gemini: callGemini, anthropic: callAnthropic, openai: callOpenAI };
@@ -35,40 +38,53 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const { question, context, byoKey, byoProvider } = await req.json();
+  const body = await req.json();
+  const { question, context, evaluationId, byoKey, byoProvider } = body;
+  if (!evaluationId) return NextResponse.json({ error: "Missing evaluation reference." }, { status: 400 });
   if (!question) return NextResponse.json({ error: "No question" }, { status: 400 });
+  
   // Size cap: this is a quick side-question, not a document.
   if (String(question).length > 1000 || String(context ?? "").length > 2000) {
     return NextResponse.json({ error: "That's too long for a quick question." }, { status: 400 });
   }
   const byo = Boolean(byoKey);
-  // (added 2026-08-21, from plan grill) Validate byoProvider against the allow-list — the
-  // ByoKeyModal UI (Task 16) already restricts users to a <select> of these three, but this
-  // route is a public endpoint independent of that UI, so it needs its own check (matches
-  // the same validation already present in /api/evaluate, Task 10). Without it, an unknown
-  // provider string falls through to `callers[provider]` being undefined and throwing an
-  // unhandled TypeError, surfaced as a vague 502 instead of a clear 400.
   if (byo && !PROVIDERS.includes(byoProvider)) {
     return NextResponse.json({ error: "Unknown provider for your key." }, { status: 400 });
   }
-  // (removed 2026-08-21, from spec grill) No shared-quota check here anymore — /api/ask no
-  // longer draws from /api/evaluate's daily counter (a first session of submit + a couple
-  // side-questions + a revise could otherwise burn most of a new user's 10 daily checks
-  // before they've explored the product). Abuse is guarded by the auth-gate above and the
-  // per-request length cap below, since each call is short/cheap relative to a full eval.
+
+  // Abuse protection limits (bypassed for BYO-key requests):
+  if (!byo) {
+    const db = getServerClient();
+    const { count: feedbackCount } = await db
+      .from("ask_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("evaluation_id", evaluationId);
+    if ((feedbackCount ?? 0) >= MAX_QUESTIONS_PER_FEEDBACK) {
+      await track(user.id, "ask_quota_hit", { evaluationId });
+      return NextResponse.json(
+        { error: "You've asked a lot about this one — that's the limit for a single check." },
+        { status: 429 }
+      );
+    }
+
+    const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString();
+    const { count: rpmCount } = await db
+      .from("ask_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", oneMinuteAgo);
+    if ((rpmCount ?? 0) >= ASK_RPM_LIMIT) {
+      await track(user.id, "ask_throttled", { evaluationId });
+      return NextResponse.json(
+        { error: "Slow down a little — try again in a moment." },
+        { status: 429 }
+      );
+    }
+  }
 
   const provider: ProviderName = byoKey ? (byoProvider as ProviderName) : "gemini";
   const apiKey = byoKey || process.env.GEMINI_API_KEY!;
 
-  // Scope guardrail: keep this on-purpose. It is NOT a general assistant.
-  // (fixed 2026-08-22, from live UI check) the Gemini adapter forces
-  // responseMimeType: "application/json" for ALL calls (it's shared with evaluate()), and the
-  // OpenAI adapter likewise forces response_format: json_object — both unconditionally, since
-  // Task 5 gives every provider one uniform signature. Without an explicit JSON contract here,
-  // Gemini/OpenAI invent their own wrapper shape (observed: `{"response": "..."}`) and it was
-  // rendered raw in SideQuestions.tsx. Fix: ask ALL THREE providers for the same tiny JSON
-  // shape explicitly, then parse it below with a plain-text fallback for Anthropic (which
-  // doesn't force JSON mode and may still just answer in prose despite the instruction).
   const system =
     "You are a tutor INSIDE a writing-feedback tool. You may ONLY help with: the user's current " +
     "submission, the feedback they just received, or how to use AI well and improve their own " +
@@ -77,27 +93,69 @@ export async function POST(req: NextRequest) {
     "something), politely decline in one sentence and redirect them back to their work — do NOT " +
     "answer it. For in-scope questions: answer clearly in 2-4 sentences, then in one short sentence " +
     "point them back to the step they were on. Never let a tangent take over. " +
-    'Return EXACTLY this JSON shape, no markdown fences, no extra text: {"answer": "<your reply>"}.';
+    'Return EXACTLY this JSON shape, no markdown fences, no extra text: {"answer": "<your reply>", "suggestions": ["<short natural follow-up>", "..."]}. suggestions is 0-3 items — omit or empty array if there is nothing natural to ask next, never force one.';
   const user2 = `The user is currently: ${context || "reviewing their feedback"}.\nQuestion: ${question}`;
 
-  // Unwraps the {"answer": "..."} contract above; falls back to the raw (code-fence-stripped)
-  // text if a provider ignores the instruction and replies in plain prose.
-  function extractAnswer(raw: string): string {
+  function extractResponse(raw: string): { answer: string; suggestions: string[] } {
     const stripped = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
     try {
       const parsed = JSON.parse(stripped);
-      if (parsed && typeof parsed.answer === "string") return parsed.answer;
-      if (parsed && typeof parsed.response === "string") return parsed.response;
+      const ans =
+        typeof parsed?.answer === "string"
+          ? parsed.answer
+          : typeof parsed?.response === "string"
+          ? parsed.response
+          : stripped;
+      const sugg =
+        Array.isArray(parsed?.suggestions)
+          ? parsed.suggestions.filter((s: unknown): s is string => typeof s === "string" && s.trim().length > 0)
+          : [];
+      return { answer: ans, suggestions: sugg };
     } catch {
-      // Not valid JSON — treat as the plain-text answer itself.
+      return { answer: stripped, suggestions: [] };
     }
-    return stripped;
   }
 
+  const isRateLimitError = (e: unknown) => {
+    const msg = String((e as any)?.message ?? e).toLowerCase();
+    return (
+      msg.includes("429") ||
+      msg.includes("resource_exhausted") ||
+      msg.includes("rate limit") ||
+      msg.includes("quota")
+    );
+  };
+
+  let raw: string;
+  let lastErrWasRateLimit = false;
   try {
-    const raw = await callers[provider](system, user2, apiKey);
-    return NextResponse.json({ answer: extractAnswer(raw) });
-  } catch {
-    return NextResponse.json({ error: "Couldn't answer that just now — try again." }, { status: 502 });
+    raw = await callers[provider](system, user2, apiKey);
+  } catch (err) {
+    if (isRateLimitError(err)) {
+      lastErrWasRateLimit = true;
+      await new Promise((r) => setTimeout(r, 2500));
+    }
+    try {
+      raw = await callers[provider](system, user2, apiKey);
+    } catch (err2) {
+      const rateLimited = lastErrWasRateLimit || isRateLimitError(err2);
+      const error = rateLimited
+        ? "We're getting a lot of questions right now — try again in a minute."
+        : "Couldn't answer that just now — try again.";
+      return NextResponse.json({ error }, { status: 502 });
+    }
   }
+
+  const { answer, suggestions } = extractResponse(raw);
+
+  // Log successful processed question for non-BYO users
+  if (!byo) {
+    const db = getServerClient();
+    await db.from("ask_requests").insert({
+      user_id: user.id,
+      evaluation_id: evaluationId,
+    });
+  }
+
+  return NextResponse.json({ answer, suggestions });
 }

@@ -15,6 +15,7 @@ const evaluable = z.object({
     accuracy: criterion, fitness: criterion, clarity: criterion,
     verified: criterion, owned: criterion, understood: criterion,
   }),
+  suggested_questions: z.array(z.string().min(1)).max(3).optional(),
 });
 
 const notEvaluable = z.object({
