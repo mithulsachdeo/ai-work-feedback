@@ -5,19 +5,19 @@ const OPTIONS = [
     id: "work_product",
     badge: "Finished Work",
     q: "Is this ready to send?",
-    hint: "An email, summary, deck text, or doc.",
+    hint: "Anything you're about to send or publish.",
   },
   {
     id: "implementation_logic",
     badge: "Automation & Logic",
     q: "Is the logic behind what I built sound?",
-    hint: "A written explanation of how your tool or automation works.",
+    hint: "How you'd explain it to whoever inherits it.",
   },
   {
     id: "concept_articulation",
     badge: "Understanding",
     q: "Do I actually understand this?",
-    hint: "In your own words — what you think a concept is and how it works.",
+    hint: "What you'd say if someone asked you to explain it.",
   },
 ] as const;
 

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import posthog from "posthog-js";
 import SignIn from "@/components/SignIn";
 import ThemeToggle from "@/components/ThemeToggle";
+import RotatingPills from "@/components/RotatingPills";
 
 export default function Home() {
   useEffect(() => {
@@ -88,42 +89,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "10px",
-            borderTop: "1px solid var(--theme-card-border)",
-            paddingTop: "24px",
-            alignItems: "center",
-          }}
-        >
-          <span style={{ fontSize: "12px", color: "var(--theme-card-text-muted)", fontWeight: 700, marginRight: "8px" }}>
-            Check any of:
-          </span>
-          {[
-            { label: "Emails to leadership", rot: "-1deg" },
-            { label: "Automation logic", rot: "1.5deg" },
-            { label: "Strategy summaries", rot: "-2deg" },
-            { label: "Concept understanding", rot: "1deg" },
-          ].map((pill, idx) => (
-            <span
-              key={idx}
-              style={{
-                fontSize: "13px",
-                fontWeight: 700,
-                padding: "6px 14px",
-                borderRadius: "var(--radius-pill)",
-                background: "var(--theme-card-surface)",
-                color: "var(--theme-card-text)",
-                border: "1px solid var(--theme-card-border)",
-                transform: `rotate(${pill.rot})`,
-              }}
-            >
-              {pill.label}
-            </span>
-          ))}
-        </div>
+        <RotatingPills />
       </section>
     </main>
   );
