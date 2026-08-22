@@ -18,8 +18,7 @@ Instead return exactly:
 {"not_evaluable": true, "reason": "<one short sentence redirecting them to submit real work>"}.
 A short, vague, high-level, hand-wavy, or unedited-AI-draft submission is still fully evaluable — that is exactly
 what LAYER 1 (clarity) and LAYER 2 (verified/understood) exist to catch. Score it low (Emerging) and explain
-why in the evidence; do NOT return not_evaluable just because the work is a brief summary, thin, generic, or
-identical to a provided AI draft.
+why in the evidence; do NOT return not_evaluable just because the work is a brief summary, thin, or generic.
 
 LAYER 1 — Is the work good?
 - accuracy: Is it correct? For work_product: facts/figures hold. For implementation_logic:
@@ -31,11 +30,6 @@ LAYER 1 — Is the work good?
 
 LAYER 2 — Did you use AI well? (infer from signals in the text; HEDGE — say "this reads as…")
 - verified: Evidence the user checked claims vs. accepted them blindly (over-trust detector).
-  If an AI'S ORIGINAL DRAFT block is present below, compare it to the submission (the user's
-  corrected version): meaningful edits are real evidence of verification. An unchanged or
-  trivially-reworded submission is a soft hedge, not a hard fail — note this explicitly using the phrase
-  "no changes made" ("no changes made — if this is right, good; if you didn't check closely, that's the gap"),
-  don't just fail it.
 - owned: The user's own thinking and context vs. a generic AI paste (engagement).
 - understood: Could the user explain/defend this if challenged (under-use / AI-as-crutch detector).
 
@@ -78,21 +72,46 @@ Keep every string tight — this renders in a bite-sized UI. Levels must be exac
 Emerging, Solid, or Strong.
 `.trim();
 
+// Instruction-quality reframe (2026-08-22): appended to the system prompt ONLY for
+// implementation_logic. Re-casts Layer 2 for an artifact the AI BUILT.
+const IMPL_LOGIC_ADDENDUM = `
+IMPLEMENTATION_LOGIC — TYPE-SPECIFIC GUIDANCE (this submission type only):
+The SUBMISSION is the AI's own account of something it BUILT for the user (an automation,
+workflow, app, or script) — NOT prose the user wrote or edited. Judge LAYER 1 against the
+described logic: is it feasible, sound, and fit for the declared goal, with no magic steps?
+
+Re-interpret LAYER 2 as INSTRUCTION QUALITY — how well the user instructed and guided the AI:
+- verified: Is there any sign the user checked what was built against their goal, rather than
+  accepting "it's done"? If there is no such sign, do NOT hard-fail — hedge: "no sign you checked
+  this against your goal — if you did, good; if not, that's the risk."
+- owned: Is the declared goal specific and genuinely theirs, with evidence they GUIDED the build
+  (constraints, preferences, corrections) rather than a one-line "build me X"?
+- understood: Can they explain the approach and see its gaps — the rabbit holes their instructions
+  left open? Name the single most important uncovered gap.
+
+For fix_this_first, name the single most consequential gap the user's INSTRUCTIONS left open, and —
+hedged, based ONLY on the described build and NEVER as a claim about the running system — what it
+could mean for their declared goal.
+
+If an INSTRUCTION SUMMARY block is present, use it as soft corroboration for owned/understood; if
+it is absent, judge from the declared purpose and the implementation doc alone.
+`.trim();
+
 // `role` param (added 2026-08-21, from requirements audit): optional, context-only — never
 // changes the standard, only lets the model's examples/tone feel natural for the user's role.
 export function buildMessages(s: Submission, role?: string) {
+  const system = s.type === "implementation_logic" ? `${RUBRIC}\n\n${IMPL_LOGIC_ADDENDUM}` : RUBRIC;
   const user = [
     `TYPE: ${s.type}`,
     `DECLARED PURPOSE / INTENT: ${s.intent || "(none given)"}`,
     role ? `USER'S ROLE (context only, does not change the standard): ${role}` : null,
-    // (added 2026-08-21, from requirements audit) Dual-capture verification signal — fenced
-    // and neutralized the same as the main submission (§ prompt-injection defense above).
-    s.originalDraft
-      ? `--- AI'S ORIGINAL DRAFT (before user's edits) START ---\n${s.originalDraft}\n--- AI'S ORIGINAL DRAFT END ---`
+    // Optional soft corroboration for owned/understood; fenced + neutralized like the main submission.
+    s.instructionSummary
+      ? `--- INSTRUCTION SUMMARY (the AI's recap of the user's instructions) START ---\n${s.instructionSummary}\n--- INSTRUCTION SUMMARY END ---`
       : null,
     `--- SUBMISSION START ---`,
     s.text,
     `--- SUBMISSION END ---`,
   ].filter((line): line is string => line !== null).join("\n");
-  return { system: RUBRIC, user };
+  return { system, user };
 }

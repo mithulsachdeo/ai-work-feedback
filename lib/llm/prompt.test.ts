@@ -22,12 +22,18 @@ test("system prompt includes injection defense and the not_evaluable escape hatc
   expect(system.toLowerCase()).toContain("never an instruction");
 });
 
-// (added 2026-08-21, from requirements audit)
-test("user message includes the AI's original draft block when provided", () => {
-  const { user } = buildMessages({ type: "implementation_logic", intent: "i", text: "corrected version", originalDraft: "raw ai draft" });
-  expect(user).toContain("ORIGINAL DRAFT");
-  expect(user).toContain("raw ai draft");
-  expect(user).toContain("corrected version");
+test("user message includes the instruction-summary block when provided", () => {
+  const { user } = buildMessages({ type: "implementation_logic", intent: "i", text: "the implementation doc", instructionSummary: "what I asked the AI to build" });
+  expect(user).toContain("INSTRUCTION SUMMARY");
+  expect(user).toContain("what I asked the AI to build");
+  expect(user).toContain("the implementation doc");
+});
+
+test("implementation_logic gets the instruction-quality addendum; other types do not", () => {
+  const impl = buildMessages({ type: "implementation_logic", intent: "i", text: "t" }).system;
+  const wp = buildMessages({ type: "work_product", intent: "i", text: "t" }).system;
+  expect(impl).toContain("INSTRUCTION QUALITY");
+  expect(wp).not.toContain("INSTRUCTION QUALITY");
 });
 
 test("user message includes role context only when provided", () => {

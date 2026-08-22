@@ -15,8 +15,8 @@ export async function saveSubmission(
       type: s.type,
       intent: s.intent,
       text: opts.doNotStore ? "[not stored at user request]" : s.text,
-      // (added 2026-08-21, from requirements audit) dual-capture: never persisted under doNotStore.
-      original_draft: opts.doNotStore ? null : (s.originalDraft ?? null),
+      // Optional instruction-summary signal (implementation_logic); never persisted under doNotStore.
+      instruction_summary: opts.doNotStore ? null : (s.instructionSummary ?? null),
       previous_submission_id: opts.previousSubmissionId ?? null,
     })
     .select().single();

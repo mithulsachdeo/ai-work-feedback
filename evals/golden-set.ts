@@ -76,6 +76,49 @@ export const GOLDEN: GoldenCase[] = [
     // No real steps, "handles everything" → clarity/understood weak.
     expect: { clarity: { atWorst: "Emerging" }, understood: { atWorst: "Solid" } },
   },
+  // (added 2026-08-22, instruction-quality reframe) Vague one-line instruction → weak owned/understood.
+  {
+    id: "impl-vague-instruction",
+    submission: {
+      type: "implementation_logic",
+      intent: "an automation to handle my incoming emails",
+      text: "I asked the AI to build something to handle my emails, and it made a workflow that reads each new email and sorts it into a folder. It decides the right folder on its own.",
+      instructionSummary: "You asked me to 'handle your emails' and sort them into folders.",
+    },
+    // One-line 'handle my emails', no constraints or success criteria given → the user barely
+    // guided the build and can't really explain/defend it. owned + understood should be weak.
+    expect: { owned: { atWorst: "Emerging" }, understood: { atWorst: "Solid" } },
+  },
+  // (added 2026-08-22) Specific goal + explicit constraints + a real check → scores well.
+  {
+    id: "impl-well-guided",
+    submission: {
+      type: "implementation_logic",
+      intent: "a workflow that files new client invoices into the correct client folder in Drive, and flags anything it can't confidently match",
+      text: "The workflow triggers on a new invoice email, extracts the client name from the subject and the sender domain, matches it against my client list, and moves the PDF into that client's Drive folder. If it can't confidently match a client, it leaves the file in an 'Unsorted' folder and emails me to file it by hand. I told it explicitly not to auto-file low-confidence matches, after it guessed wrong twice during my testing.",
+      instructionSummary: "You asked for invoices filed by client, with a required manual-review fallback for anything uncertain, and told me not to auto-file low-confidence matches.",
+    },
+    // Specific goal, explicit constraints, evidence of a real check (caught wrong guesses in testing).
+    expect: { owned: { atLeast: "Solid" }, verified: { atLeast: "Solid" }, understood: { atLeast: "Solid" } },
+  },
+  // (added 2026-08-22) Implementation doc with an obvious uncovered gap the instructions never
+  // addressed → understood weak, and the gap should surface in the feedback.
+  {
+    id: "impl-uncovered-gap",
+    submission: {
+      type: "implementation_logic",
+      intent: "an automation that adds every new signup to my mailing list and welcomes them",
+      text: "When someone submits the signup form, the automation takes their email, adds a new row to my mailing-list sheet, and sends them a welcome email.",
+      instructionSummary: "You asked me to add new signups to the mailing list and send a welcome email.",
+    },
+    // Instructions never addressed the same person signing up twice → repeat rows + repeat welcomes.
+    // understood should be Emerging and the gap should be named. NOTE: `mustMention` is a substring
+    // check on this criterion's evidence/next_step. "duplicate" is the expected token — but if the
+    // eval run shows the model reliably describes this gap with a different word (e.g. "twice",
+    // "again"), change mustMention to a token the model actually emits, or drop mustMention and keep
+    // only the level assertion. Report whatever you changed and why.
+    expect: { understood: { atWorst: "Emerging", mustMention: "duplicate" } },
+  },
   {
     id: "not-evaluable-gibberish",
     submission: { type: "work_product", intent: "test", text: "asdf asdf lorem ipsum test test 123 [PASTE HERE]" },
@@ -86,34 +129,6 @@ export const GOLDEN: GoldenCase[] = [
     // Off-purpose: asking the tool to DO a task, not submitting work to be checked.
     submission: { type: "work_product", intent: "help", text: "Write me a professional email asking my manager for a raise, and make it persuasive." },
     expectNotEvaluable: true,
-  },
-  // (added 2026-08-21, from requirements audit) Dual-capture verification signal cases —
-  // proves the originalDraft-vs-text comparison instructed in the rubric prompt actually works.
-  {
-    id: "impl-dual-capture-verified",
-    submission: {
-      type: "implementation_logic",
-      intent: "the logic of the ticket-routing automation I built",
-      text: "The automation reads each ticket, checks the tag field for a team code, and routes to that team's queue. If no tag is present, it falls back to the general queue and pings me directly so nothing sits unrouted. I added the fallback after testing showed ~5% of tickets arrive untagged.",
-      originalDraft: "The AI just reads each ticket and figures out the right team and sends it there automatically. It handles everything.",
-    },
-    // Substantial rewrite from a vague AI draft to specific, tested detail → real evidence of
-    // verification. (fixed 2026-08-21, from rubric-validation pass) was atWorst:"Solid", which
-    // would have FAILED a correct "Strong" result — atWorst is a ceiling, not a floor, and this
-    // case wants to assert the opposite (this should score well, not poorly).
-    expect: { verified: { atLeast: "Solid" } },
-  },
-  {
-    id: "impl-dual-capture-unchanged",
-    submission: {
-      type: "implementation_logic",
-      intent: "the logic of the ticket-routing automation I built",
-      text: "The AI just reads each ticket and figures out the right team and sends it there automatically. It handles everything.",
-      originalDraft: "The AI just reads each ticket and figures out the right team and sends it there automatically. It handles everything.",
-    },
-    // Identical draft and "corrected" version → soft hedge (rubric spec Q9), not a hard fail —
-    // evidence text should note no changes were made, not just assert a level.
-    expect: { verified: { atWorst: "Solid", mustMention: "no changes" } },
   },
   // (added 2026-08-22, from role-analogy brainstorming) Regression-safety case: same
   // submission as wp-strong-email, but WITH a role set. Proves the strengthened

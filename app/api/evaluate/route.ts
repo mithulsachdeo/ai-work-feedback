@@ -37,8 +37,8 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
   const body = await req.json();
-  // `originalDraft` and `role` added 2026-08-21, from requirements audit.
-  const { type, intent, byoKey, byoProvider, previousSubmissionId, doNotStore, originalDraft, role } = body;
+  // `instructionSummary` and `role` added 2026-08-21/22, from requirements audit / reframe.
+  const { type, intent, byoKey, byoProvider, previousSubmissionId, doNotStore, instructionSummary, role } = body;
   let text: string = body.text ?? "";
   if (!text || text.trim().length < 20) {
     return NextResponse.json({ error: "Add a bit more so I can check it." }, { status: 400 });
@@ -103,14 +103,14 @@ export async function POST(req: NextRequest) {
   let evalOut: Awaited<ReturnType<typeof evaluate>>;
   let lastErrWasRateLimit = false;
   try {
-    evalOut = await evaluate({ type, intent, text, originalDraft }, choice, undefined, role);
+    evalOut = await evaluate({ type, intent, text, instructionSummary }, choice, undefined, role);
   } catch (err) {
     if (isRateLimitError(err)) {
       lastErrWasRateLimit = true;
       await new Promise((r) => setTimeout(r, 2500));
     }
     try {
-      evalOut = await evaluate({ type, intent, text, originalDraft }, choice, undefined, role);   // one retry, LLM step only
+      evalOut = await evaluate({ type, intent, text, instructionSummary }, choice, undefined, role);   // one retry, LLM step only
     } catch (err2) {
       const rateLimited = lastErrWasRateLimit || isRateLimitError(err2);
       const error = rateLimited
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
   const { result, provider, model } = evalOut;
   const isNotEvaluable = "not_evaluable" in result && result.not_evaluable === true;
 
-  const submissionId = await saveSubmission(user.id, { type, intent, text, originalDraft }, { previousSubmissionId: linkedPreviousId, doNotStore });
+  const submissionId = await saveSubmission(user.id, { type, intent, text, instructionSummary }, { previousSubmissionId: linkedPreviousId, doNotStore });
   const evaluationId = await saveEvaluation(submissionId, result, provider, model, byo);
 
   // Measurement loop: extract levels; on a linked resubmission, record improvement.

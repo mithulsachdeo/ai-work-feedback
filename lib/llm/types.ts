@@ -3,10 +3,10 @@ export type ProviderName = "gemini" | "anthropic" | "openai";
 export type Level = "Emerging" | "Solid" | "Strong";
 export type CriterionId = "accuracy" | "fitness" | "clarity" | "verified" | "owned" | "understood";
 
-// `originalDraft` (added 2026-08-21, from requirements audit): implementation_logic only —
-// the AI's pre-edit draft, paired with `text` (the user's corrected version) so 2.1
-// (verified) has a real signal to compare instead of inferring from prose alone.
-export interface Submission { type: SubmissionType; intent: string; text: string; originalDraft?: string; }
+// `instructionSummary` (added 2026-08-22, instruction-quality reframe): implementation_logic
+// only — the AI's recap of what the user asked it to build. Optional soft corroboration for
+// the re-cast Layer 2 (owned/understood); `text` holds the AI's implementation doc being scored.
+export interface Submission { type: SubmissionType; intent: string; text: string; instructionSummary?: string; }
 export interface CriterionResult { level: Level; evidence: string; next_step: string; standard: string; }
 
 // Discriminated union: either a full evaluation, or a graceful "can't check this".

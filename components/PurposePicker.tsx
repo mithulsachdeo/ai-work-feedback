@@ -6,18 +6,21 @@ const OPTIONS = [
     badge: "Finished Work",
     q: "Is this ready to send?",
     hint: "Anything you're about to send or publish.",
+    note: "",
   },
   {
     id: "implementation_logic",
     badge: "Automation & Logic",
     q: "Is the logic behind what I built sound?",
-    hint: "How you'd explain it to whoever inherits it.",
+    hint: "Something you built with AI's help — an automation, workflow, or script.",
+    note: "Needs a chat-based AI that can explain what it built.",
   },
   {
     id: "concept_articulation",
     badge: "Understanding",
     q: "Do I actually understand this?",
     hint: "What you'd say if someone asked you to explain it.",
+    note: "",
   },
 ] as const;
 
@@ -123,6 +126,11 @@ export default function PurposePicker({ onPick }: { onPick: (t: string) => void 
               <div style={{ fontSize: "14px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", fontWeight: 400 }}>
                 {o.hint}
               </div>
+              {o.note && (
+                <div style={{ fontSize: "12px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", fontWeight: 400, fontStyle: "italic", marginTop: "8px" }}>
+                  {o.note}
+                </div>
+              )}
             </div>
           </button>
         ))}
