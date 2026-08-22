@@ -9,6 +9,7 @@
   --color-text-muted: rgba(23, 25, 25, 0.62);
   --color-border: rgba(23, 25, 25, 0.18);
   --color-border-dark: rgba(255, 252, 245, 0.2);
+  --color-text-muted-dark: rgba(255, 252, 245, 0.72);
 
   --radius-card: 28px;
   --radius-section: 38px;

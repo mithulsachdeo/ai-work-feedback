@@ -36,14 +36,14 @@ export default function SignIn() {
           border: "1px solid var(--color-lime)",
           borderRadius: "20px",
           padding: "20px 24px",
-          color: "var(--color-ink)",
+          color: "var(--color-paper)",
           marginTop: "16px",
         }}
       >
         <div style={{ fontWeight: 800, fontSize: "16px", marginBottom: "4px" }}>
           Check your email ↗
         </div>
-        <p style={{ fontSize: "14px", color: "var(--color-text-muted)" }}>
+        <p style={{ fontSize: "14px", color: "var(--color-text-muted-dark)" }}>
           We sent a sign-in link to <strong>{email}</strong>. Click it to begin.
         </p>
       </div>
