@@ -18,27 +18,30 @@ export default function ThemeToggle() {
     } catch {}
   }
 
+  const label = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
+
   return (
     <button
       type="button"
       onClick={toggle}
+      aria-label={label}
+      title={label}
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: "6px",
+        justifyContent: "center",
         background: "none",
         border: "1px solid var(--theme-card-border)",
         borderRadius: "var(--radius-pill)",
-        padding: "6px 14px",
-        fontSize: "12px",
-        fontWeight: 700,
+        padding: "6px 12px",
+        fontSize: "14px",
+        lineHeight: 1,
         color: "var(--theme-card-text)",
         cursor: "pointer",
         transition: "all var(--duration-fast) var(--ease-standard)",
       }}
-      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
     >
-      <span>{theme === "dark" ? "☀️ Light mode" : "🌙 Dark mode"}</span>
+      <span aria-hidden="true">{theme === "dark" ? "☀️" : "🌙"}</span>
     </button>
   );
 }
