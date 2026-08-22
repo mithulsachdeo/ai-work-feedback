@@ -3,6 +3,11 @@ import type { Submission, CriterionId, Level } from "@/lib/llm/types";
 export interface GoldenCase {
   id: string;
   submission: Submission;
+  // (added 2026-08-22, from role-analogy brainstorming) optional — threads through to
+  // buildMessages/evaluate exactly like the real app does. Used for a regression-safety
+  // case proving role-conditioning doesn't shift levels; analogy CONTENT quality is a
+  // manual spot-check, not an automated assertion (see plan Task 21).
+  role?: string;
   // Assertions: each named criterion must come back at (or worse than) `atWorst` and/or at
   // (or better than) `atLeast`, and/or the evidence/next_step must contain a keyword.
   // `atLeast` added 2026-08-21, from rubric-validation pass — without it there was no way to
@@ -109,5 +114,20 @@ export const GOLDEN: GoldenCase[] = [
     // Identical draft and "corrected" version → soft hedge (rubric spec Q9), not a hard fail —
     // evidence text should note no changes were made, not just assert a level.
     expect: { verified: { atWorst: "Solid", mustMention: "no changes" } },
+  },
+  // (added 2026-08-22, from role-analogy brainstorming) Regression-safety case: same
+  // submission as wp-strong-email, but WITH a role set. Proves the strengthened
+  // role-analogy instruction doesn't shift levels — same bounds must still hold. Analogy
+  // CONTENT quality (is it actually a good analogy?) is a manual spot-check in AI Studio,
+  // not something this automated assertion can robustly judge.
+  {
+    id: "role-analogy-does-not-change-score",
+    submission: {
+      type: "work_product",
+      intent: "email to my manager proposing we delay the launch by a week",
+      text: "Hi Sam — I'd like to push the launch to the 14th. Two reasons: the payment flow still fails on 1 in 20 test runs (bug #412, fix ETA Tuesday), and QA hasn't covered mobile. A week gets both done and de-risks the on-call weekend. If you're OK, I'll tell the team today.",
+    },
+    role: "Product/BA",
+    expect: { owned: { atLeast: "Solid" }, clarity: { atLeast: "Solid" }, understood: { atLeast: "Solid" } },
   },
 ];
