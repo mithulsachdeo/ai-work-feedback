@@ -198,13 +198,31 @@ accepting the change — this has caught real regressions, not just theoretical 
 
 ## Open items / not yet done
 
-- **Merge `feature/automation-logic-reframe` (Task 23).** Built, committed, and green, but
-  NOT merged to `master` and NOT deployed. Before merge: a live end-to-end walkthrough of the
-  reshaped Automation & Logic flow in both themes (submit a real check, confirm the three
-  fields, both copy-scaffolds, the feedback reads as instruction-quality, and the eligibility
-  line on all three surfaces). Migration `0004` is already applied to live Supabase, so the
-  branch is safe to run against the real DB. Nothing automated has exercised the real
-  submission path — this walkthrough is the one gap.
+- **Task 23 (Automation & Logic reframe) — DONE, merged, pushed, deployed.** Merged to
+  `master` (merge commit `07d1e96`), pushed to origin (Vercel prod deploy triggered), branch
+  deleted. Migration `0004` applied to live Supabase. Live end-to-end walkthrough completed in
+  both themes: three fields + both copy-scaffolds render, a real submission returned
+  instruction-quality feedback (it flagged the gaps the instructions left open, with a
+  role-relevant analogy), light-mode level badges are legible, and the eligibility line shows
+  on all three surfaces. Nothing outstanding here.
+- **⚠️ Known scaling limits — deliberately NOT fixed; hotfix at launch IF onboarding spikes**
+  (user's call, 2026-08-23). At the 40–50-user target the current setup is expected to hold;
+  the risk is a burst (e.g. a LinkedIn push landing many people at once). Two cheap, no-code,
+  dashboard-only fixes, in priority order:
+  1. **Magic-link email — the real onboarding bottleneck.** Sign-in emails go through
+     Supabase's built-in SMTP, which is rate-limited (~30/hr, historically less). A signup
+     burst means some users never get their link and silently bounce — directly hurting the
+     activation metric the case study is graded on. Fix: point Supabase Auth at a free custom
+     SMTP provider (Resend / Postmark free tier). ~30 min, $0, no code.
+  2. **Shared free-tier Gemini key.** All non-BYO users share one key with per-minute + per-day
+     caps; a burst 429s some checks (app degrades gracefully — retry + "add your own key"
+     nudge). Fix: enable billing on the Google AI key (pay-as-you-go; `flash-lite` is
+     pennies/day at this scale) to remove the daily cliff. No code.
+  - Minor, optional: set `export const maxDuration = 30;` on `/api/evaluate` and `/api/ask`
+    (no `maxDuration` is set today, so they inherit Vercel's ~10s default — a slow Gemini call
+    plus the 2.5s retry could be cut off). The app tier itself (Vercel autoscale + Supabase via
+    the PostgREST HTTP API, no direct-connection pooling issue) scales into the hundreds without
+    re-architecture — these two dashboard fixes are the whole story until revenue-stage scale.
 - **Full live walkthrough** of production, both themes, after this session's rapid
   changes (theme toggle, carousel, role analogies, suggested-questions loop) —
   deferred by user choice, should happen early next session.
