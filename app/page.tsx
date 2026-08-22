@@ -90,6 +90,9 @@ export default function Home() {
         </div>
 
         <RotatingPills />
+        <p style={{ fontSize: "12px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", margin: 0 }}>
+          Automation checks need a chat-based AI that can explain what it built.
+        </p>
       </section>
     </main>
   );

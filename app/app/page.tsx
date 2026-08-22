@@ -61,7 +61,7 @@ export default function AppPage() {
     type: string;
     intent: string;
     text: string;
-    originalDraft?: string;
+    instructionSummary?: string;
     doNotStore: boolean;
   }) {
     setBusy(true);
