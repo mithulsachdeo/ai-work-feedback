@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import { CRITERIA } from "@/constants";
 import type { EvaluationResult, CriterionId, Level } from "@/lib/llm/types";
 import SideQuestions from "./SideQuestions";
+import FeedbackWidget from "./FeedbackWidget";
 
 const LEVEL_STYLES: Record<Level, { bg: string; color: string; border: string; label: string }> = {
   Emerging: {
@@ -36,6 +37,8 @@ export default function FeedbackView({
   byo?: { key: string; provider: string };
 }) {
   const [open, setOpen] = useState<CriterionId | null>(null);
+  const [showNudge, setShowNudge] = useState(false);
+  const [showWidget, setShowWidget] = useState(false);
 
   useEffect(() => {
     posthog.capture("fix_viewed", { evaluationId });
@@ -45,7 +48,22 @@ export default function FeedbackView({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ evaluationId, action: "viewed_fix" }),
     }).catch(() => {});
-  }, [evaluationId]);
+
+    // Check one-time feedback nudge
+    if (typeof window !== "undefined" && !result.not_evaluable) {
+      const seen = localStorage.getItem("feedback_nudge_shown");
+      if (!seen) {
+        setShowNudge(true);
+      }
+    }
+  }, [evaluationId, result]);
+
+  const dismissNudge = () => {
+    setShowNudge(false);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("feedback_nudge_shown", "1");
+    }
+  };
 
   // Guardrail branch: the model returned "can't check this" instead of scores.
   if (result.not_evaluable) {
@@ -268,8 +286,70 @@ export default function FeedbackView({
         </div>
       )}
 
-      {/* 5. Side-Questions Channel */}
+      {/* 5. One-time dismissible product feedback nudge */}
+      {showNudge && (
+        <div
+          style={{
+            background: "rgba(201, 255, 54, 0.12)",
+            border: "1px solid rgba(201, 255, 54, 0.4)",
+            borderRadius: "18px",
+            padding: "14px 18px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "10px",
+          }}
+        >
+          <div style={{ fontSize: "13px", color: "var(--color-ink)" }}>
+            Got a sec? Tell us how this feedback landed for you.
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <button
+              onClick={() => {
+                setShowWidget(true);
+                dismissNudge();
+              }}
+              style={{
+                padding: "6px 14px",
+                borderRadius: "var(--radius-pill)",
+                background: "var(--color-ink)",
+                color: "var(--color-paper)",
+                fontWeight: 700,
+                fontSize: "12px",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              Give feedback ↗
+            </button>
+            <button
+              onClick={dismissNudge}
+              style={{
+                background: "none",
+                border: "none",
+                fontSize: "12px",
+                color: "var(--color-text-muted)",
+                cursor: "pointer",
+                padding: "4px",
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 6. Side-Questions Channel */}
       <SideQuestions context="reviewing your feedback" byo={byo} />
+
+      {/* 7. Feedback Widget Modal if opened from nudge */}
+      {showWidget && (
+        <FeedbackWidget
+          onClose={() => setShowWidget(false)}
+          trigger="nudge"
+        />
+      )}
     </div>
   );
 }

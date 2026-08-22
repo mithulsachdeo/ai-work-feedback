@@ -8,6 +8,7 @@ import SubmissionForm from "@/components/SubmissionForm";
 import FeedbackView from "@/components/FeedbackView";
 import QuotaBanner from "@/components/QuotaBanner";
 import ByoKeyModal from "@/components/ByoKeyModal";
+import FeedbackWidget from "@/components/FeedbackWidget";
 import type { EvaluationResult } from "@/lib/llm/types";
 
 export default function AppPage() {
@@ -21,6 +22,7 @@ export default function AppPage() {
   const [remaining, setRemaining] = useState(-1);
   const [byo, setByo] = useState<{ key: string; provider: string } | undefined>();
   const [showByo, setShowByo] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   // Revise loop: prefill + parent-submission link.
   const [prefill, setPrefill] = useState<{ text: string; intent: string }>({ text: "", intent: "" });
@@ -209,7 +211,25 @@ export default function AppPage() {
           </span>
         </div>
 
-        <QuotaBanner remaining={remaining} byoActive={!!byo} onUnlock={() => setShowByo(true)} />
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          <QuotaBanner remaining={remaining} byoActive={!!byo} onUnlock={() => setShowByo(true)} />
+          <button
+            type="button"
+            onClick={() => setShowFeedback(true)}
+            style={{
+              background: "none",
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-pill)",
+              padding: "6px 14px",
+              fontSize: "12px",
+              fontWeight: 700,
+              color: "var(--color-ink)",
+              cursor: "pointer",
+            }}
+          >
+            Feedback
+          </button>
+        </div>
       </header>
 
       {/* Stage: Pick Purpose */}
@@ -372,7 +392,7 @@ export default function AppPage() {
         </div>
       )}
 
-      {/* BYO Key Modal */}
+      {/* Modals */}
       {showByo && (
         <ByoKeyModal
           onSet={(k) => {
@@ -380,6 +400,13 @@ export default function AppPage() {
             setShowByo(false);
           }}
           onClose={() => setShowByo(false)}
+        />
+      )}
+
+      {showFeedback && (
+        <FeedbackWidget
+          onClose={() => setShowFeedback(false)}
+          trigger="header"
         />
       )}
     </main>
