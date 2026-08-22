@@ -67,37 +67,44 @@ export default function SubmissionForm({
       }}
     >
       <div>
-        <span
-          style={{
-            textTransform: "uppercase",
-            letterSpacing: "0.14em",
-            fontSize: "11px",
-            fontWeight: 800,
-            color: "var(--color-blue)",
-            display: "inline-block",
-            marginBottom: "6px",
-          }}
-        >
-          {helpInfo.title}
-        </span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", flexWrap: "wrap", gap: "8px" }}>
+          <span
+            style={{
+              textTransform: "uppercase",
+              letterSpacing: "0.14em",
+              fontSize: "11px",
+              fontWeight: 800,
+              color: "var(--color-blue)",
+            }}
+          >
+            {helpInfo.title}
+          </span>
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              fontSize: "12px",
+              lineHeight: 1.5,
+              fontWeight: 500,
+              color: "var(--theme-card-text-muted)",
+            }}
+          >
+            <span
+              style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                background: "var(--color-lavender)",
+                flexShrink: 0,
+              }}
+            />
+            <span>{isLateNight ? LATE_NIGHT_LINE : HIGH_STAKES_LINE}</span>
+          </div>
+        </div>
         <p style={{ fontSize: "14px", lineHeight: 1.5, color: "var(--theme-card-text)" }}>
           {helpInfo.desc}
         </p>
-        <div
-          style={{
-            fontSize: "13.5px",
-            lineHeight: 1.5,
-            fontWeight: 500,
-            fontStyle: "italic",
-            color: "var(--theme-delight-text)",
-            transform: "rotate(-1.5deg)",
-            transformOrigin: "left center",
-            display: "inline-block",
-            marginTop: "6px",
-          }}
-        >
-          {isLateNight ? LATE_NIGHT_LINE : HIGH_STAKES_LINE}
-        </div>
       </div>
 
       {type === "implementation_logic" && (
