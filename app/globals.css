@@ -33,6 +33,7 @@
   --theme-input-bg: rgba(255, 252, 245, 0.08);
   --theme-input-text: var(--color-paper);
   --theme-input-border: rgba(255, 252, 245, 0.2);
+  --theme-delight-text: var(--color-lavender);
 }
 
 [data-theme="light"] {
@@ -47,6 +48,7 @@
   --theme-input-bg: #ffffff;
   --theme-input-text: var(--color-ink);
   --theme-input-border: var(--color-border);
+  --theme-delight-text: #6A62D2;
 }
 
 * {
