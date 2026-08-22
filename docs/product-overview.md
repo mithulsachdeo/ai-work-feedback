@@ -305,6 +305,14 @@ These aren't bugs or gaps — they're deliberate boundaries.
 - **Grading spreadsheets/dashboards/code on their own terms** rather than as text descriptions.
 - **A two-pass "role-blind then rephrase" method** for the analogies (rejected for now on cost).
 - **Pricing/monetization** beyond bring-your-own-key.
+- **Cost-saving caching** (reusing a past AI answer instead of asking again) — a poor fit here,
+  because every submission is unique personal work, so there's almost nothing to reuse, and the
+  AI cost is already near-zero. Worth revisiting only at high, paid-tier volume.
+- **Automated quality-monitoring of the AI on live traffic** ("runtime evals") — unnecessary at
+  this scale, where outputs can be reviewed by hand and real users signal quality through the
+  revise-and-improve loop and the "Tell us" ratings. Instead, a fixed test set is re-run
+  periodically to catch the AI model changing underneath. Worth building only at a scale where
+  reviewing outputs by hand becomes impossible.
 
 ### Discarded on principle — bringing these back would change what the product *is*
 
