@@ -77,8 +77,19 @@ the backstop for pastes that are not implementation docs.
 | `instructionSummary` | No | The AI's recap of the user's instructions — **soft corroboration** for `owned`/`understood` only. |
 
 `originalDraft` was consumed only by `implementation_logic`, so the rename is
-self-contained. Submit gates on `intent` + `text` only; `instructionSummary`
-never blocks submission.
+self-contained at the type level. Submit gates on `intent` + `text` only;
+`instructionSummary` never blocks submission.
+
+### Persistence (added 2026-08-22, discovered during round-1 verification)
+
+The field is persisted write-only for later analysis, gated by "don't store".
+The renamed field carries through the persistence path: the `submissions`
+table column `original_draft` is **renamed to `instruction_summary`** via a new
+migration, and `lib/data.ts` / `app/api/evaluate/route.ts` are updated to read
+and write the renamed field. (This path was missed in the initial file list;
+round 1 changed only the `lib/llm/*` layer, which left the persistence layer
+referencing the old field and broke `tsc`. Every round must gate on
+`npx tsc --noEmit`, not just `npm test` — vitest runs untyped and hid it.)
 
 ## Submission form (`components/SubmissionForm.tsx`)
 
@@ -171,6 +182,10 @@ Add three cases:
   `instructionSummary`.
 - `lib/llm/prompt.ts` — remove diff clause; add `TYPE`-conditional Layer 2
   re-cast + `instructionSummary` block.
+- `supabase/migrations/0004_*.sql` — new migration renaming the `submissions`
+  column `original_draft` → `instruction_summary`.
+- `lib/data.ts` and `lib/data.test.ts` — write/assert the renamed column.
+- `app/api/evaluate/route.ts` — destructure and pass `instructionSummary`.
 - `components/SubmissionForm.tsx` — three-field reshape + second scaffold prompt
   + eligibility line + payload field rename.
 - `components/PurposePicker.tsx` — updated hint + eligibility qualifier on the
