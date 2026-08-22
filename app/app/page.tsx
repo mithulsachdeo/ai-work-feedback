@@ -162,7 +162,7 @@ export default function AppPage() {
   return (
     <main
       style={{
-        width: "min(calc(100% - 32px), 1080px)",
+        width: "min(calc(100% - 32px), 1280px)",
         margin: "24px auto 64px auto",
         display: "flex",
         flexDirection: "column",
