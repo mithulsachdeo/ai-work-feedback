@@ -72,7 +72,7 @@ export default function ByoKeyModal({
           >
             Unlock unlimited, sharper checks
           </h3>
-          <p style={{ fontSize: "14px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", marginTop: "8px" }}>
+          <p style={{ fontSize: "14px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", fontWeight: 400, marginTop: "8px" }}>
             Paste your own API key. It stays in this browser session only — we never store it or send it anywhere except directly to the provider for your checks.
           </p>
         </div>

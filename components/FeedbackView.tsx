@@ -94,7 +94,7 @@ export default function FeedbackView({
         <p style={{ fontSize: "15px", lineHeight: 1.5, color: "var(--theme-card-text)" }}>
           {result.reason}
         </p>
-        <p style={{ fontSize: "13px", color: "var(--theme-card-text-muted)" }}>
+        <p style={{ fontSize: "13px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", fontWeight: 400 }}>
           Try submitting a real, finished piece of work — an email, a doc, or your own explanation of a concept.
         </p>
       </div>
@@ -300,7 +300,7 @@ export default function FeedbackView({
             gap: "10px",
           }}
         >
-          <div style={{ fontSize: "13px", color: "var(--theme-card-text)" }}>
+          <div style={{ fontSize: "13px", lineHeight: 1.5, color: "var(--theme-card-text)", fontWeight: 400 }}>
             Got a sec? Tell us how this feedback landed for you.
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>

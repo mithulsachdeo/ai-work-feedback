@@ -223,17 +223,17 @@ export default function SubmissionForm({
             border: "1px solid var(--theme-input-border)",
             background: "var(--theme-input-bg)",
             fontSize: "14px",
-            lineHeight: 1.6,
+            lineHeight: 1.5,
             color: "var(--theme-input-text)",
             outline: "none",
             resize: "vertical",
           }}
         />
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
-          <span style={{ fontSize: "11px", color: "var(--theme-card-text-muted)" }}>
+          <span style={{ fontSize: "11px", lineHeight: 1.5, color: "var(--theme-card-text-muted)" }}>
             {PASTE_BOX_NUDGE}
           </span>
-          <span style={{ fontSize: "11px", color: text.length >= 20 ? "var(--color-mint)" : "var(--theme-card-text-muted)" }}>
+          <span style={{ fontSize: "11px", lineHeight: 1.5, color: text.length >= 20 ? "var(--color-mint)" : "var(--theme-card-text-muted)" }}>
             {text.length} chars {text.length < 20 ? "(minimum 20)" : "✓"}
           </span>
         </div>
@@ -256,6 +256,7 @@ export default function SubmissionForm({
             alignItems: "center",
             gap: "8px",
             fontSize: "13px",
+            lineHeight: 1.5,
             color: "var(--theme-card-text-muted)",
             cursor: "pointer",
           }}

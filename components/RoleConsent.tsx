@@ -89,7 +89,7 @@ export default function RoleConsent({ userId, onDone }: { userId: string; onDone
         </select>
       </div>
 
-      <p style={{ fontSize: "12px", lineHeight: 1.5, color: "var(--theme-card-text-muted)" }}>
+      <p style={{ fontSize: "12px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", fontWeight: 400 }}>
         {CONSENT_LINE}
       </p>
 

@@ -265,7 +265,7 @@ export default function AppPage() {
                   <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--theme-card-text)" }}>
                     Resume your previous check
                   </div>
-                  <div style={{ fontSize: "12px", color: "var(--theme-card-text-muted)" }}>
+                  <div style={{ fontSize: "12px", lineHeight: 1.5, color: "var(--theme-card-text-muted)" }}>
                     &ldquo;{lastAvailable.intent}&rdquo;
                   </div>
                 </div>
@@ -288,7 +288,7 @@ export default function AppPage() {
             )}
 
             {role && (
-              <div style={{ fontSize: "13px", color: "var(--theme-card-text-muted)", fontWeight: 500 }}>
+              <div style={{ fontSize: "13px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", fontWeight: 400 }}>
                 💡 As a <strong>{role}</strong>, try checking your latest email, summary, or doc.
               </div>
             )}

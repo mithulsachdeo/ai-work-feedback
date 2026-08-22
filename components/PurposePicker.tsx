@@ -120,7 +120,7 @@ export default function PurposePicker({ onPick }: { onPick: (t: string) => void 
               >
                 {o.q}
               </div>
-              <div style={{ fontSize: "14px", lineHeight: 1.4, color: "var(--theme-card-text-muted)" }}>
+              <div style={{ fontSize: "14px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", fontWeight: 400 }}>
                 {o.hint}
               </div>
             </div>

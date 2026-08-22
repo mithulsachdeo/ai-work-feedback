@@ -53,7 +53,7 @@ export default function SideQuestions({
         <div style={{ fontSize: "14px", fontWeight: 800, color: "var(--theme-card-text)", marginBottom: "4px" }}>
           Have a question about this feedback?
         </div>
-        <p style={{ fontSize: "12px", color: "var(--theme-card-text-muted)" }}>
+        <p style={{ fontSize: "12px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", fontWeight: 400 }}>
           Ask for clarification, how to rephrase a section, or how to verify a fact.
         </p>
       </div>
@@ -106,8 +106,9 @@ export default function SideQuestions({
             borderRadius: "18px",
             padding: "16px 20px",
             fontSize: "14px",
-            lineHeight: 1.6,
+            lineHeight: 1.5,
             color: "var(--theme-card-text)",
+            fontWeight: 400,
           }}
         >
           <div style={{ fontWeight: 800, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.1em", color: "var(--color-blue)", marginBottom: "6px" }}>

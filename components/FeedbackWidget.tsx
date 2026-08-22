@@ -104,7 +104,7 @@ export default function FeedbackWidget({
             <h3 style={{ fontSize: "22px", fontWeight: 800, color: "var(--theme-card-text)" }}>
               Thank you for the feedback!
             </h3>
-            <p style={{ fontSize: "14px", color: "var(--theme-card-text-muted)" }}>
+            <p style={{ fontSize: "14px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", fontWeight: 400 }}>
               Your input helps us make the coach more accurate and useful.
             </p>
           </div>
@@ -135,7 +135,7 @@ export default function FeedbackWidget({
               >
                 How was your experience?
               </h3>
-              <p style={{ fontSize: "13px", color: "var(--theme-card-text-muted)", marginTop: "4px" }}>
+              <p style={{ fontSize: "13px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", fontWeight: 400, marginTop: "4px" }}>
                 Tell us how the feedback landed and what we should improve.
               </p>
             </div>
