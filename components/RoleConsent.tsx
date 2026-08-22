@@ -80,9 +80,11 @@ export default function RoleConsent({ userId, onDone }: { userId: string; onDone
             outline: "none",
           }}
         >
-          <option value="">Select…</option>
+          <option value="" style={{ background: "var(--theme-card-bg)", color: "var(--theme-card-text)" }}>
+            Select…
+          </option>
           {ROLES.map((r) => (
-            <option key={r} value={r}>
+            <option key={r} value={r} style={{ background: "var(--theme-card-bg)", color: "var(--theme-card-text)" }}>
               {r}
             </option>
           ))}
