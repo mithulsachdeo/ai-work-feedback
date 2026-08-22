@@ -320,7 +320,7 @@ export default function FeedbackView({
                 cursor: "pointer",
               }}
             >
-              Give feedback ↗
+              Share your thoughts ↗
             </button>
             <button
               onClick={dismissNudge}

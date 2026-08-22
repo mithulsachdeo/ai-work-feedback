@@ -238,7 +238,7 @@ export default function AppPage() {
                 cursor: "pointer",
               }}
             >
-              Feedback
+              Tell us
             </button>
             <ThemeToggle />
           </div>

@@ -122,7 +122,7 @@ export default function FeedbackWidget({
                   marginBottom: "6px",
                 }}
               >
-                {trigger === "nudge" ? "Quick Check-in" : "Product Feedback"}
+                {trigger === "nudge" ? "Quick Check-in" : "How's this tool working?"}
               </span>
               <h3
                 style={{
@@ -253,7 +253,7 @@ export default function FeedbackWidget({
                   cursor: !canSubmit || busy ? "not-allowed" : "pointer",
                 }}
               >
-                {busy ? "Sending…" : "Send feedback ↗"}
+                {busy ? "Sending…" : "Send ↗"}
               </button>
               <button
                 type="button"
