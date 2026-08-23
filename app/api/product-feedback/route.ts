@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
   // Mirrors rating + tags to PostHog for a quick dashboard view — deliberately excludes
   // the free-text comment, which may contain more personal reflection than a rating/tag
   // and doesn't need to leave the DB to be useful in aggregate.
-  track(user.id, "product_feedback_submitted", {
+  await track(user.id, "product_feedback_submitted", {
     rating,
     tags: cleanTags,
     hasComment: cleanComment.length > 0,

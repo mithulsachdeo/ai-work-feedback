@@ -13,4 +13,9 @@ export async function track(userId: string, event: string, props: Record<string,
   const c = get();
   if (!c) return;
   c.capture({ distinctId: userId, event, properties: props });
+  try {
+    await c.flush();
+  } catch (err) {
+    console.error("PostHog flush failed:", err);
+  }
 }
