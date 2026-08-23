@@ -7,7 +7,7 @@ import { saveSubmission, saveEvaluation, saveOutcome, getEvaluationLevels, getSu
 import { improvedAny } from "@/lib/llm/levels";
 import { track } from "@/lib/events";
 import type { ProviderName, CriterionId, Level } from "@/lib/llm/types";
-import { MAX_SUBMISSION_CHARS } from "@/constants";
+import { checkLengths } from "@/lib/validate";
 
 const PROVIDERS = ["gemini", "anthropic", "openai"];
 
@@ -49,8 +49,11 @@ export async function POST(req: NextRequest) {
   if (!intent || !String(intent).trim()) {
     return NextResponse.json({ error: "Add a one-line purpose so I know what to check this against." }, { status: 400 });
   }
-  let truncated = false;
-  if (text.length > MAX_SUBMISSION_CHARS) { text = text.slice(0, MAX_SUBMISSION_CHARS); truncated = true; }
+
+  const lengthError = checkLengths({ intent: String(intent), text, instructionSummary });
+  if (lengthError) {
+    return NextResponse.json({ error: lengthError }, { status: 400 });
+  }
 
   const byo = Boolean(byoKey);
   if (byo && !PROVIDERS.includes(byoProvider)) {
@@ -149,6 +152,6 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     evaluationId, submissionId, result,
     remaining: byo ? -1 : Math.max(0, remaining - (isNotEvaluable ? 0 : 1)),
-    truncated, improved,
+    improved,
   });
 }
