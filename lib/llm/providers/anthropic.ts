@@ -7,8 +7,12 @@ export async function callAnthropic(system: string, user: string, apiKey: string
     model: MODELS.anthropic,
     max_tokens: 2000,
     system,
-    messages: [{ role: "user", content: user + "\n\nReturn only the JSON object." }],
+    messages: [
+      { role: "user", content: user + "\n\nReturn only the JSON object." },
+      { role: "assistant", content: "{" },
+    ],
   });
   const block = msg.content.find((b) => b.type === "text");
-  return block && block.type === "text" ? block.text : "";
+  const text = block && block.type === "text" ? block.text : "";
+  return text ? "{" + text : "";
 }
