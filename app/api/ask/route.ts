@@ -12,6 +12,8 @@ import type { ProviderName } from "@/lib/llm/types";
 const callers = { gemini: callGemini, anthropic: callAnthropic, openai: callOpenAI };
 const PROVIDERS = ["gemini", "anthropic", "openai"];
 
+export const maxDuration = 30;
+
 export async function POST(req: NextRequest) {
   // Auth-gate: this route uses the shared key, so it must not be an open free-LLM endpoint.
   const cookieStore = cookies();

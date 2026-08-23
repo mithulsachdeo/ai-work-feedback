@@ -11,6 +11,8 @@ import { MAX_SUBMISSION_CHARS } from "@/constants";
 
 const PROVIDERS = ["gemini", "anthropic", "openai"];
 
+export const maxDuration = 30;
+
 export async function POST(req: NextRequest) {
   const cookieStore = cookies();
   const supabase = createServerClient(
