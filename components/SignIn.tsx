@@ -2,77 +2,91 @@
 import { useState } from "react";
 import { getBrowserClient } from "@/lib/supabase/client";
 
+// Email + password auth with NO email verification (Supabase "Confirm email" is OFF, so no
+// email is ever sent — this is what removes the rate limit and the magic-link cross-browser
+// bug). Email may be fake; it is only an identifier and is never stored in content tables.
+const MIN_PASSWORD = 8;
+
 export default function SignIn() {
+  const [mode, setMode] = useState<"signup" | "login">("signup");
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const sb = getBrowserClient();
-  const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined;
 
-  async function magic() {
-    if (!email) return;
+  function mapError(raw: string): string {
+    const m = raw.toLowerCase();
+    if (m.includes("already registered") || m.includes("already exists"))
+      return "That email is already registered — switch to Log in.";
+    if (m.includes("invalid login") || m.includes("invalid credentials"))
+      return "Wrong email or password.";
+    if (m.includes("password")) return `Password must be at least ${MIN_PASSWORD} characters.`;
+    return raw || "Something went wrong — please try again.";
+  }
+
+  async function submit() {
+    if (!email || !password || loading) return;
+    if (mode === "signup" && password.length < MIN_PASSWORD) {
+      setErrorMsg(`Password must be at least ${MIN_PASSWORD} characters.`);
+      return;
+    }
     setLoading(true);
     setErrorMsg("");
     try {
-      const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
+      const { error } =
+        mode === "signup"
+          ? await sb.auth.signUp({ email, password })
+          : await sb.auth.signInWithPassword({ email, password });
       if (error) {
-        setErrorMsg(error.message || "Couldn't send sign-in link.");
-      } else {
-        setSent(true);
+        setErrorMsg(mapError(error.message || ""));
+        setLoading(false);
+        return;
       }
+      // "Confirm email" is off, so both flows return a live session immediately. The SSR cookie
+      // is set by the browser client; /app reads it server-side on the next request.
+      window.location.href = "/app";
     } catch {
       setErrorMsg("An unexpected error occurred.");
-    } finally {
       setLoading(false);
     }
   }
 
-  if (sent) {
-    return (
-      <div
-        style={{
-          background: "rgba(201, 255, 54, 0.12)",
-          border: "1px solid var(--color-lime)",
-          borderRadius: "20px",
-          padding: "20px 24px",
-          color: "var(--theme-card-text)",
-          marginTop: "16px",
-        }}
-      >
-        <div style={{ fontWeight: 800, fontSize: "16px", marginBottom: "4px" }}>
-          Check your email ↗
-        </div>
-        <p style={{ fontSize: "14px", color: "var(--theme-card-text-muted)" }}>
-          We sent a sign-in link to <strong>{email}</strong>. Click it to begin.
-        </p>
-      </div>
-    );
-  }
+  // Visual-only base; sizing is set per field so a flex-basis never leaks onto the wrong axis
+  // (the email field is a column child — a horizontal `flex-basis` there becomes its height).
+  const baseInput = {
+    padding: "14px 20px",
+    borderRadius: "var(--radius-pill)",
+    border: "1px solid var(--theme-input-border)",
+    background: "var(--theme-input-bg)",
+    fontSize: "15px",
+    color: "var(--theme-input-text)",
+    outline: "none",
+    boxSizing: "border-box",
+  } as const;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "100%", maxWidth: "420px" }}>
+      <input
+        type="email"
+        placeholder="you@work.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && email && password) submit(); }}
+        style={{ ...baseInput, width: "100%" }}
+      />
       <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
         <input
-          type="email"
-          placeholder="you@work.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && email) magic(); }}
-          style={{
-            flex: "1 1 240px",
-            padding: "14px 20px",
-            borderRadius: "var(--radius-pill)",
-            border: "1px solid var(--theme-input-border)",
-            background: "var(--theme-input-bg)",
-            fontSize: "15px",
-            color: "var(--theme-input-text)",
-            outline: "none",
-          }}
+          type="password"
+          placeholder={mode === "signup" ? "Choose a password (8+ characters)" : "Your password"}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && email && password) submit(); }}
+          style={{ ...baseInput, flex: "1 1 200px", minWidth: 0 }}
         />
         <button
-          onClick={magic}
-          disabled={!email || loading}
+          onClick={submit}
+          disabled={!email || !password || loading}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -85,16 +99,38 @@ export default function SignIn() {
             fontWeight: 800,
             fontSize: "15px",
             border: "none",
-            opacity: !email || loading ? 0.5 : 1,
+            opacity: !email || !password || loading ? 0.5 : 1,
             transition: "transform var(--duration-fast) var(--ease-standard)",
           }}
         >
-          {loading ? "Sending…" : "Email me a link ↗"}
+          {loading ? "…" : mode === "signup" ? "Create account ↗" : "Log in ↗"}
         </button>
       </div>
-      {errorMsg && (
-        <p style={{ fontSize: "13px", color: "#d32f2f", marginTop: "4px" }}>{errorMsg}</p>
+
+      {errorMsg && <p style={{ fontSize: "13px", color: "#d32f2f", margin: 0 }}>{errorMsg}</p>}
+
+      {mode === "signup" && (
+        <p style={{ fontSize: "12px", lineHeight: 1.5, color: "var(--theme-card-text-muted)", margin: 0 }}>
+          Use a password you&apos;ll remember — there&apos;s no recovery.
+        </p>
       )}
+
+      <button
+        type="button"
+        onClick={() => { setMode(mode === "signup" ? "login" : "signup"); setErrorMsg(""); }}
+        style={{
+          alignSelf: "flex-start",
+          background: "none",
+          border: "none",
+          padding: 0,
+          fontSize: "13px",
+          fontWeight: 700,
+          color: "var(--color-blue)",
+          cursor: "pointer",
+        }}
+      >
+        {mode === "signup" ? "Already have an account? Log in" : "Need an account? Create one"}
+      </button>
     </div>
   );
 }

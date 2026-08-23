@@ -47,7 +47,7 @@ export default function AppPage() {
         return;
       }
       setUserId(data.user.id);
-      const { data: p } = await sb.from("profiles").select("role").eq("id", data.user.id).single();
+      const { data: p } = await sb.from("profiles").select("role").eq("id", data.user.id).maybeSingle();
       setNeedsRole(!p?.role);
       setRole(p?.role ?? null);
     });
