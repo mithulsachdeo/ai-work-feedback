@@ -7,7 +7,7 @@ import { saveSubmission, saveEvaluation, saveOutcome, getEvaluationLevels, getSu
 import { improvedAny } from "@/lib/llm/levels";
 import { track } from "@/lib/events";
 import type { ProviderName, CriterionId, Level } from "@/lib/llm/types";
-import { MAX_SUBMISSION_CHARS } from "@/constants";
+import { MAX_SUBMISSION_CHARS, TYPES } from "@/constants";
 
 const PROVIDERS = ["gemini", "anthropic", "openai"];
 
@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   // `instructionSummary` and `role` added 2026-08-21/22, from requirements audit / reframe.
   const { type, intent, byoKey, byoProvider, previousSubmissionId, doNotStore, instructionSummary, role } = body;
+  if (!TYPES.includes(type)) {
+    return NextResponse.json({ error: "Unknown check type." }, { status: 400 });
+  }
   let text: string = body.text ?? "";
   if (!text || text.trim().length < 20) {
     return NextResponse.json({ error: "Add a bit more so I can check it." }, { status: 400 });
