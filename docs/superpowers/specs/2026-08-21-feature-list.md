@@ -1,5 +1,7 @@
 # Feature List — AI-Work-Feedback MVP
 
+> ⚠️ **Superseded (2026-08-24) — historical snapshot.** Feature 1.1 "Magic-link sign-in" is replaced by email+password (no verification, no recovery); sign-out was added. The living feature description is `docs/product-overview.md §8`. Body below is the original 2026-08-21 list, kept as a record.
+
 _Compiled 2026-08-21 from the rubric spec, implementation spec, and implementation plan
 (all already grilled/hardened). Organized by product area, in roughly the order a user
 encounters them. Each feature states the "why," not just the "what" — pulled from the

@@ -6,10 +6,12 @@ The product is built, deployed, live, and now rebranded — this session was bui
 of `docs/superpowers/plans/2026-08-21-mvp-implementation.md`) for full decision history.
 Three headline things happened this 2026-08-23 session: (1) the Automation & Logic check was
 reframed around instruction quality (Task 23, shipped); (2) the product was **renamed
-Signal / learn → Whetstone** with a new logo (Task 24, shipped); (3) a **CRITICAL, still-open
-auth bug** was diagnosed — magic-link sign-in fails for Yahoo/Outlook-type inboxes (see the
-"⚠️ CRITICAL" item under Open items — this is the first thing to fix next session). A
+Signal / learn → Whetstone** with a new logo (Task 24, shipped); (3) a **CRITICAL auth bug** was
+diagnosed — magic-link sign-in failed for Yahoo/Outlook-type inboxes — **since RESOLVED on
+2026-08-24 by replacing magic-link with email+password; see the update note directly below.** A
 non-technical product guide now also ships in-app at `/guide` and as `docs/product-overview.md`._
+
+_**Update 2026-08-24 (later session) — READ THIS FIRST.** The magic-link auth bug below is **RESOLVED**: magic-link/OTP was **replaced entirely with email + password** (Supabase "Confirm email" OFF → no email is ever sent; fake emails allowed by design; no password recovery). This also killed a PKCE cross-browser failure (link opened in a different browser than it was requested from). Shipped to `master` via **PR #1**. Three more changes sit on branch `fix/not-evaluable-false-positive` (**PR #2**, promoted to prod as a canary, **not yet merged**): (a) fix for false-positive `not_evaluable` on question-shaped `concept_articulation` intents; (b) `posthog.identify()` so client + server events stitch into one person — **funnels only work once PR #2's latest build is re-promoted in Vercel**; (c) a **sign-out** control (log-out icon in the app header) with `posthog.reset()`. `app/auth/callback/route.ts` was deleted. The "⚠️ CRITICAL auth" and "magic-link SMTP bottleneck" items below are kept as history only. Current event inventory + metrics: see **`docs/analytics-events.md`**._
 
 ## Where things stand
 
@@ -25,11 +27,11 @@ precise, scoped execution prompts one at a time, Antigravity executes and report
 Claude independently verifies (checks actual commits/diffs, doesn't just trust the
 report) before handing off the next prompt. This worked well and should continue.
 
-**⚠️ There IS a live blocker: magic-link sign-in is broken for Yahoo / Outlook-type inboxes**
-(their mail scanners pre-consume the single-use link token). Gmail sign-in works. Root cause is
-confirmed; the fix (a 6-digit OTP code option) is NOT built yet — full detail under the
-"⚠️ CRITICAL" item in Open items. Everything else: all DB migrations applied; Supabase Auth URL
-config is correct for the new `whetstone-feedback.vercel.app` domain.
+**Auth is resolved (2026-08-24):** magic-link was replaced with **email + password** (no email
+sent), so the Yahoo/Outlook link-scanner blocker described below no longer applies. All DB
+migrations applied; Supabase Auth URL config is correct for `whetstone-feedback.vercel.app`.
+**One required dashboard setting:** Supabase → Auth → Email → **"Confirm email" OFF** + minimum
+password length 8 — without it, sign-up fails.
 
 ## The product (one line)
 
@@ -42,7 +44,7 @@ against a user-declared purpose across three submission types (`work_product`,
 
 ## Stack
 
-Next.js (App Router) on Vercel · Supabase (Postgres + magic-link auth, RLS enabled on
+Next.js (App Router) on Vercel · Supabase (Postgres + email+password auth, RLS enabled on
 all tables, content access via service-role only) · PostHog analytics · default LLM =
 Google **`gemini-3.5-flash-lite`** (free tier, shared server-side key — the plan
 originally specified `gemini-2.0-flash`, which was deprecated/delisted mid-session and
@@ -243,8 +245,10 @@ declined: LLM cost caching — see the feature list §9.15.)
 
 ## Open items / not yet done
 
-- **⚠️ CRITICAL — magic-link sign-in is broken for Yahoo / Outlook-type inboxes (root cause
-  found, fix NOT built).** Symptom: after clicking the emailed magic link the user lands back on
+- **✅ RESOLVED 2026-08-24 — auth switched from magic-link to email + password** (see the
+  top-of-doc update; `app/auth/callback/route.ts` deleted; the 6-digit-OTP plan below was NOT
+  the path taken). Everything from here to the end of this bullet is **history, kept for context
+  only.** Original diagnosis: Symptom: after clicking the emailed magic link the user lands back on
   the sign-up page with no session. **Root cause (confirmed by test): the email provider's link
   scanner pre-fetches the magic-link URL and consumes the single-use token before the human
   clicks** — so the click hits a spent token, `exchangeCodeForSession` fails, and the callback
@@ -283,11 +287,10 @@ declined: LLM cost caching — see the feature list §9.15.)
   (user's call, 2026-08-23). At the 40–50-user target the current setup is expected to hold;
   the risk is a burst (e.g. a LinkedIn push landing many people at once). Two cheap, no-code,
   dashboard-only fixes, in priority order:
-  1. **Magic-link email — the real onboarding bottleneck.** Sign-in emails go through
-     Supabase's built-in SMTP, which is rate-limited (~30/hr, historically less). A signup
-     burst means some users never get their link and silently bounce — directly hurting the
-     activation metric the case study is graded on. Fix: point Supabase Auth at a free custom
-     SMTP provider (Resend / Postmark free tier). ~30 min, $0, no code.
+  1. **~~Magic-link email bottleneck~~ — NO LONGER APPLIES (2026-08-24).** Auth is now
+     email+password with confirmation off, so **no sign-in emails are sent at all** — the SMTP
+     rate-limit onboarding bottleneck is gone. (Custom SMTP only matters again if email
+     verification or password reset is ever added.)
   2. **Shared free-tier Gemini key.** All non-BYO users share one key with per-minute + per-day
      caps; a burst 429s some checks (app degrades gracefully — retry + "add your own key"
      nudge). Fix: enable billing on the Google AI key (pay-as-you-go; `flash-lite` is
@@ -318,9 +321,9 @@ declined: LLM cost caching — see the feature list §9.15.)
 
 ## Next steps (suggested order)
 
-1. **Fix the auth blocker (⚠️ CRITICAL above) — first.** Brainstorm + build the 6-digit
-   OTP-code sign-in so Yahoo/Outlook users can sign in at all; this gates the entire acquisition
-   push. Demo on Gmail in the meantime.
+1. **Auth is fixed (email + password).** Remaining ops: **re-promote PR #2's latest build** in
+   Vercel so `posthog.identify` + sign-out go live, then **merge PR #2** once the canary looks
+   clean. Confirm Supabase "Confirm email" is OFF in the project your Vercel prod points at.
 2. Do the deferred full live walkthrough (both themes, all screens, the suggested-questions loop,
    product feedback widget) on the new `whetstone-feedback.vercel.app` domain.
 3. Check status of acquisition (the actual binding constraint) and real sample submissions —

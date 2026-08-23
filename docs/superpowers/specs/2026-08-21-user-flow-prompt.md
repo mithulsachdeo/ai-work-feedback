@@ -1,5 +1,7 @@
 # Prompt — hand this to another LLM to generate the user flow
 
+> ⚠️ **Superseded (2026-08-24) — historical snapshot.** The magic-link / "Email me a link" / "Check your email" flow described here no longer exists; auth is now email+password (no email sent), plus a sign-out control. Current truth: `docs/product-overview.md`. Body below is the original 2026-08-21 design, kept as a record.
+
 _Copy everything below the line into a fresh LLM conversation. It's self-contained — no other
 context needed._
 
