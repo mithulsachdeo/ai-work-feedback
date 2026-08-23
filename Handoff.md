@@ -1,15 +1,21 @@
 # Handoff — Whetstone (AI-work-feedback MVP, Case Study, due 26 Aug 2026)
 
-_Last updated: 2026-08-23 (end of session). This supersedes all earlier handoffs. The
-product is built, deployed, and live — this session was building + fixing + polishing,
-not planning. Read this, then read the plan file's grill log (bottom of
-`docs/superpowers/plans/2026-08-21-mvp-implementation.md`) for full decision history.
-The 2026-08-23 session reframed the Automation & Logic check — see Task 23 below and
-`docs/superpowers/specs/2026-08-22-automation-logic-instruction-reframe-design.md`._
+_Last updated: 2026-08-23 (end of a long session). This supersedes all earlier handoffs.
+The product is built, deployed, live, and now rebranded — this session was building + fixing
++ polishing + rebranding, not planning. Read this, then read the plan file's grill log (bottom
+of `docs/superpowers/plans/2026-08-21-mvp-implementation.md`) for full decision history.
+Three headline things happened this 2026-08-23 session: (1) the Automation & Logic check was
+reframed around instruction quality (Task 23, shipped); (2) the product was **renamed
+Signal / learn → Whetstone** with a new logo (Task 24, shipped); (3) a **CRITICAL, still-open
+auth bug** was diagnosed — magic-link sign-in fails for Yahoo/Outlook-type inboxes (see the
+"⚠️ CRITICAL" item under Open items — this is the first thing to fix next session). A
+non-technical product guide now also ships in-app at `/guide` and as `docs/product-overview.md`._
 
 ## Where things stand
 
-**The MVP is built and live in production:** https://ai-work-feedback-virid.vercel.app/
+**The MVP is built and live in production:** https://whetstone-feedback.vercel.app/
+(renamed 2026-08-23; the old `ai-work-feedback-virid.vercel.app` is dead — the Vercel project
+was renamed to `whetstone-feedback`).
 
 All 17 original plan tasks (+ Task 6.5) are complete, smoke-tested, and deployed. Five
 more tasks (18–22) were added and shipped this session in response to live feedback
@@ -19,9 +25,11 @@ precise, scoped execution prompts one at a time, Antigravity executes and report
 Claude independently verifies (checks actual commits/diffs, doesn't just trust the
 report) before handing off the next prompt. This worked well and should continue.
 
-**Nothing is currently blocking.** All outstanding DB migrations have been applied by
-the human. The one open item is a full live walkthrough of the production site across
-both themes (deferred by user choice, not urgent) — worth doing early next session.
+**⚠️ There IS a live blocker: magic-link sign-in is broken for Yahoo / Outlook-type inboxes**
+(their mail scanners pre-consume the single-use link token). Gmail sign-in works. Root cause is
+confirmed; the fix (a 6-digit OTP code option) is NOT built yet — full detail under the
+"⚠️ CRITICAL" item in Open items. Everything else: all DB migrations applied; Supabase Auth URL
+config is correct for the new `whetstone-feedback.vercel.app` domain.
 
 ## The product (one line)
 
@@ -107,7 +115,7 @@ questions per minute per user, both bypassed for BYO-key requests. A real fail-o
 was found and fixed during this task's verification pass (see below).
 
 **Task 23 — Automation & Logic check reframed around instruction quality (2026-08-23;
-built and committed on a branch, pending merge):** the `implementation_logic` submission
+SHIPPED — merged, pushed, deployed):** the `implementation_logic` submission
 type was rebuilt. The old model asked non-technical users for the AI's "original draft" +
 their "corrected version" and scored verification by diffing them — a behavior this audience
 doesn't have (they don't edit AI-built implementations). The new model: the scored artifact
@@ -137,13 +145,39 @@ we chose to state plainly rather than expand to cover un-interrogable tools). Wo
   "Tell us" so it stops colliding with the product's own "feedback"; the intent-field
   label/placeholder was made per-type (the Conceptual Understanding check no longer shows a
   work_product email example).
-- **Branch:** `feature/automation-logic-reframe` — **NOT yet merged to `master`.** Commits:
-  spec + amendment; backend (types/prompt/golden-set/persistence/migration); UI reshape +
-  three-surface eligibility; per-type intent copy. All green: `tsc` clean, 25 unit tests,
-  golden set green, production build clean across 12 routes.
+- **Status: MERGED + DEPLOYED.** Branch `feature/automation-logic-reframe` merged to `master`
+  (merge `07d1e96`), pushed, deleted. Live end-to-end walkthrough passed in both themes (a real
+  submission returned instruction-quality feedback naming the gaps, with a role analogy;
+  light-mode badges legible; eligibility on all three surfaces). All green: `tsc`, 25 tests,
+  golden set, production build.
 - **Process note (worth keeping):** round 1 passed `npm test` + `npm run eval` but the field
   rename had broken `tsc` in the persistence layer, which vitest (untyped) didn't catch. Every
   Antigravity round now gates on `npx tsc --noEmit`, not just the test/eval scripts.
+
+**Task 24 — Rebrand "Signal / learn" → "Whetstone" + brand identity (2026-08-23; SHIPPED —
+merged `9e13f09`, deployed):** name chosen via `/pm-marketing-growth:product-name` ("Whetstone"
+= you sharpen your judgment on it; the doctor's "second-opinion" direction was also explored and
+set aside). Renamed everywhere — app headers, page titles/metadata, favicon (`app/icon.svg`),
+`package.json` name, and all docs. New assets: a theme-aware inline header logo
+(`components/Logo.tsx` — whetstone + steel blade + one lime spark; wordmark in Manrope; flips
+light/dark via CSS vars) and two brand lockup SVGs in `public/whetstone-dark.svg` /
+`public/whetstone-light.svg`. The ChatGPT-generated logo the user first had was deliberately
+NOT used (too "AI-themed" — glow + sparkle-squares — against the editorial, not-AI-themed design
+system); the SVGs were hand-built in the product palette. Tagline: "Sharpen how you work with AI."
+Verified live in both themes. **Note:** renaming the Vercel project repeatedly is what triggered
+the auth breakage below — see the config note under Open items.
+
+**Also shipped this session (docs + in-app guide):**
+- **In-app `/guide` page** (`app/guide/page.tsx`, merged `0536661`) — renders
+  `docs/product-overview.md` (single source of truth) through `marked`, styled with the app's
+  theme tokens, opened from a "Guide" button in the app header (new tab). No screenshots (they'd
+  rot as the UI changes).
+- **`docs/product-overview.md`** — a comprehensive **non-technical** product guide (what it is,
+  screen-by-screen, feedback logic, designed limits, kept/deferred/discarded + the why). Also
+  published as a shareable claude.ai web-page artifact — **republish it after any content edit.**
+- **Deferred-on-principle decisions recorded** (feature list §9.15 / §9.16): LLM cost caching
+  (wrong fit — unique per-user inputs, near-zero cost) and runtime evals (redundant + doubles the
+  fragile key; periodic golden-set rerun is the agreed model-drift substitute).
 
 ## Real bugs found and fixed this session (worth knowing about, not just historical)
 
@@ -209,6 +243,35 @@ declined: LLM cost caching — see the feature list §9.15.)
 
 ## Open items / not yet done
 
+- **⚠️ CRITICAL — magic-link sign-in is broken for Yahoo / Outlook-type inboxes (root cause
+  found, fix NOT built).** Symptom: after clicking the emailed magic link the user lands back on
+  the sign-up page with no session. **Root cause (confirmed by test): the email provider's link
+  scanner pre-fetches the magic-link URL and consumes the single-use token before the human
+  clicks** — so the click hits a spent token, `exchangeCodeForSession` fails, and the callback
+  (`app/auth/callback/route.ts`, which currently ignores that error and always redirects to
+  `/app`) lets `/app` bounce them to `/`. **Gmail works; the user's Yahoo does not; forwarding
+  Yahoo→Gmail also fails** (token already consumed). This is NOT a code or config bug — the app
+  code and the Supabase URL config are both correct (verified). It's the classic
+  single-use-magic-link vs. webmail-link-scanner problem, and it will silently break sign-in for
+  the many recruited users on **Outlook / Microsoft 365 "Safe Links"** — an activation risk for
+  the exact target audience, not an edge case.
+  - **Recommended fix (bounded feature, not built):** add a **6-digit OTP code** sign-in option
+    (a code the user types can't be pre-consumed by a scanner). Two parts: (a) Supabase → Auth →
+    Email Templates → Magic Link — include the code token (`{{ .Token }}`); (b) app — after
+    "Email me a link", show a "enter the code" field and call
+    `supabase.auth.verifyOtp({ email, token, type: 'email' })`. Keep the magic link too (Gmail
+    users are fine); just add the code path. Run it through `/superpowers:brainstorming` first
+    (it changes the auth UX), then a scoped Antigravity prompt.
+  - **Immediate unblock for demo/testing:** use a **Gmail** address — sign-in works today.
+  - **Optional visibility hardening (drafted, not shipped):** make `app/auth/callback/route.ts`
+    check the `exchangeCodeForSession` error and redirect to `/?auth_error=…` instead of a silent
+    bounce, so any future auth failure shows the real reason in the URL.
+- **Config note (reference).** Production URL is now `https://whetstone-feedback.vercel.app`;
+  Supabase Site URL + Redirect URLs are set to match (incl. `/auth/callback`, `/**`, localhost).
+  Hard lesson: **every Vercel project-name change regenerates the `.vercel.app` URL and
+  re-breaks Supabase auth** (we thrashed through `wetstone` → `whetstone.ai` → `whetstone-feedback`
+  before it stabilised). Don't rename the Vercel project again; if a real domain is wanted, add
+  it under Vercel → Domains and point Supabase Site URL at it.
 - **Task 23 (Automation & Logic reframe) — DONE, merged, pushed, deployed.** Merged to
   `master` (merge commit `07d1e96`), pushed to origin (Vercel prod deploy triggered), branch
   deleted. Migration `0004` applied to live Supabase. Live end-to-end walkthrough completed in
@@ -255,12 +318,15 @@ declined: LLM cost caching — see the feature list §9.15.)
 
 ## Next steps (suggested order)
 
-1. Do the deferred full live walkthrough (both themes, all screens, the new
-   suggested-questions loop, product feedback widget).
-2. Check status of acquisition (the actual binding constraint) and real sample
-   submissions — these are more urgent than further UI polish with the deadline this
-   close.
-3. Continue fixing/polishing based on real usage, following the established
+1. **Fix the auth blocker (⚠️ CRITICAL above) — first.** Brainstorm + build the 6-digit
+   OTP-code sign-in so Yahoo/Outlook users can sign in at all; this gates the entire acquisition
+   push. Demo on Gmail in the meantime.
+2. Do the deferred full live walkthrough (both themes, all screens, the suggested-questions loop,
+   product feedback widget) on the new `whetstone-feedback.vercel.app` domain.
+3. Check status of acquisition (the actual binding constraint) and real sample submissions —
+   more urgent than further UI polish with the deadline this close.
+4. Continue fixing/polishing based on real usage, following the established
    brainstorm → grill (for anything non-trivial) → scoped Antigravity handoff →
    independent verification loop.
-4. If time allows: reconcile `design.md` with the actual built system.
+5. If time allows: reconcile `design.md` with the actual built system, and refresh the published
+   guide artifact if `docs/product-overview.md` changed.
