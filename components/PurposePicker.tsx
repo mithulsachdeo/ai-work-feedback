@@ -74,7 +74,7 @@ export default function PurposePicker({ onPick }: { onPick: (t: string) => void 
               color: "var(--theme-card-text)",
               display: "flex",
               flexDirection: "column",
-              justifyContent: "space-between",
+              justifyContent: "flex-start",
               gap: "24px",
               minHeight: "180px",
               cursor: "pointer",
