@@ -66,6 +66,19 @@ export const GOLDEN: GoldenCase[] = [
     // Clear misconception (API ≠ database) → accuracy must be Emerging.
     expect: { accuracy: { atWorst: "Emerging", mustMention: "database" } },
   },
+  // (added 2026-08-23, prod incident) Question-shaped intent ("What is a RAG") was tripping the
+  // not_evaluable "request for YOU to perform a task" rule. A real, correct explanation must SCORE,
+  // not bounce — the harness fails any non-expectNotEvaluable case that returns not_evaluable.
+  {
+    id: "concept-question-intent-scores",
+    submission: {
+      type: "concept_articulation",
+      intent: "What is a RAG",
+      text: "Retrieval-augmented generation (RAG) is a way to make an LLM answer from your own documents instead of only its training data. When a question comes in, the system first searches a knowledge base for the most relevant chunks of text, then passes those chunks to the LLM along with the question, so the answer is grounded in that retrieved context. It reduces hallucination and lets you update what the model knows by updating the documents rather than retraining it.",
+    },
+    // Accurate and clear → must score well, and crucially must NOT be bounced as not_evaluable.
+    expect: { accuracy: { atLeast: "Solid" }, clarity: { atLeast: "Solid" } },
+  },
   {
     id: "impl-handwavy",
     submission: {

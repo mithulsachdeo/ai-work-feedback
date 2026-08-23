@@ -128,8 +128,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error, remaining }, { status: 502 });
     }
   }
+  // not_evaluable can be a flash-lite false positive (the model is nondeterministic). Re-roll
+  // the LLM step ONCE on a bounce (non-BYO only) and keep the re-roll if it now scores. No quota
+  // is charged for not_evaluable either way, so this only costs one extra call on a rare bounce.
+  if (!byo && "not_evaluable" in evalOut.result && evalOut.result.not_evaluable === true) {
+    try {
+      const retry = await evaluate({ type, intent, text, instructionSummary }, choice, undefined, role);
+      const retryBounced = "not_evaluable" in retry.result && retry.result.not_evaluable === true;
+      if (!retryBounced) evalOut = retry;
+    } catch {
+      // keep the original not_evaluable result if the re-roll errors
+    }
+  }
+
   const { result, provider, model } = evalOut;
   const isNotEvaluable = "not_evaluable" in result && result.not_evaluable === true;
+
+  // Observability (non-blocking, content-free): surface false-positive bounces in prod, including
+  // doNotStore submissions whose text is unrecoverable. track() swallows its own errors.
+  if (isNotEvaluable) {
+    await track(user.id, "submission_not_evaluable", {
+      type, intent, textLength: text.length, provider, model,
+      reason: (result as { reason?: string }).reason ?? null,
+    });
+  }
 
   try {
     const submissionId = await saveSubmission(user.id, { type, intent, text, instructionSummary }, { previousSubmissionId: linkedPreviousId, doNotStore });
