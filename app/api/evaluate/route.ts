@@ -7,9 +7,11 @@ import { saveSubmission, saveEvaluation, saveOutcome, getEvaluationLevels, getSu
 import { improvedAny } from "@/lib/llm/levels";
 import { track } from "@/lib/events";
 import type { ProviderName, CriterionId, Level } from "@/lib/llm/types";
-import { MAX_SUBMISSION_CHARS } from "@/constants";
+import { MAX_SUBMISSION_CHARS, TYPES } from "@/constants";
 
 const PROVIDERS = ["gemini", "anthropic", "openai"];
+
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   const cookieStore = cookies();
@@ -39,6 +41,9 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   // `instructionSummary` and `role` added 2026-08-21/22, from requirements audit / reframe.
   const { type, intent, byoKey, byoProvider, previousSubmissionId, doNotStore, instructionSummary, role } = body;
+  if (!TYPES.includes(type)) {
+    return NextResponse.json({ error: "Unknown check type." }, { status: 400 });
+  }
   let text: string = body.text ?? "";
   if (!text || text.trim().length < 20) {
     return NextResponse.json({ error: "Add a bit more so I can check it." }, { status: 400 });
@@ -122,33 +127,46 @@ export async function POST(req: NextRequest) {
   const { result, provider, model } = evalOut;
   const isNotEvaluable = "not_evaluable" in result && result.not_evaluable === true;
 
-  const submissionId = await saveSubmission(user.id, { type, intent, text, instructionSummary }, { previousSubmissionId: linkedPreviousId, doNotStore });
-  const evaluationId = await saveEvaluation(submissionId, result, provider, model, byo);
+  try {
+    const submissionId = await saveSubmission(user.id, { type, intent, text, instructionSummary }, { previousSubmissionId: linkedPreviousId, doNotStore });
+    const evaluationId = await saveEvaluation(submissionId, result, provider, model, byo);
 
-  // Measurement loop: extract levels; on a linked resubmission, record improvement.
-  let improved: boolean | null = null;
-  let levels: Record<CriterionId, Level> | null = null;
-  if (!isNotEvaluable) {
-    const scored = result as Exclude<typeof result, { not_evaluable: true }>;
-    levels = Object.fromEntries(
-      Object.entries(scored.criteria).map(([k, v]) => [k, (v as any).level])
-    ) as Record<CriterionId, Level>;
-    if (linkedPreviousId) {
-      const prev = await getEvaluationLevels(linkedPreviousId);
-      if (prev) { improved = improvedAny(prev, levels); await saveOutcome(evaluationId, "resubmitted", improved); }
+    // Measurement loop: extract levels; on a linked resubmission, record improvement.
+    let improved: boolean | null = null;
+    let levels: Record<CriterionId, Level> | null = null;
+    if (!isNotEvaluable) {
+      const scored = result as Exclude<typeof result, { not_evaluable: true }>;
+      levels = Object.fromEntries(
+        Object.entries(scored.criteria).map(([k, v]) => [k, (v as any).level])
+      ) as Record<CriterionId, Level>;
+      if (linkedPreviousId) {
+        const prev = await getEvaluationLevels(linkedPreviousId);
+        if (prev) { improved = improvedAny(prev, levels); await saveOutcome(evaluationId, "resubmitted", improved); }
+      }
     }
-  }
 
-  // Quota fix (added 2026-08-21, from plan grill): the previous version charged quota on
-  // ANY successfully-parsed result, including not_evaluable — contradicting the locked P0 #3
-  // decision ("failed / not_evaluable evaluations never burn a user's daily allowance").
-  // Charge only on a genuinely scored result.
-  if (!byo && !isNotEvaluable) await consumeQuota(user.id);
-  await track(user.id, "evaluation_completed", { type, provider, byo, levels });
-  if (improved) await track(user.id, "level_improved", { type });
-  return NextResponse.json({
-    evaluationId, submissionId, result,
-    remaining: byo ? -1 : Math.max(0, remaining - (isNotEvaluable ? 0 : 1)),
-    truncated, improved,
-  });
+    // Quota fix (added 2026-08-21, from plan grill): the previous version charged quota on
+    // ANY successfully-parsed result, including not_evaluable — contradicting the locked P0 #3
+    // decision ("failed / not_evaluable evaluations never burn a user's daily allowance").
+    // Charge only on a genuinely scored result.
+    if (!byo && !isNotEvaluable) await consumeQuota(user.id);
+    await track(user.id, "evaluation_completed", { type, provider, byo, levels });
+    if (improved) await track(user.id, "level_improved", { type });
+    return NextResponse.json({
+      evaluationId, submissionId, result,
+      remaining: byo ? -1 : Math.max(0, remaining - (isNotEvaluable ? 0 : 1)),
+      truncated, improved,
+    });
+  } catch (dbErr) {
+    console.error("Database write failed during evaluation persistence:", dbErr);
+    return NextResponse.json({
+      result,
+      evaluationId: null,
+      submissionId: null,
+      remaining: byo ? -1 : remaining,
+      truncated,
+      improved: null,
+      persistWarning: true,
+    });
+  }
 }
