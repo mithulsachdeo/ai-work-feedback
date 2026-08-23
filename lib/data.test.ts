@@ -52,7 +52,7 @@ test("saveSubmission stores instructionSummary when present", async () => {
 test("getSubmissionOwner returns the owning user_id", async () => {
   const fakeSb = {
     from() {
-      return { select() { return this; }, eq() { return this; }, single: async () => ({ data: { user_id: "u1" }, error: null }) };
+      return { select() { return this; }, eq() { return this; }, maybeSingle: async () => ({ data: { user_id: "u1" }, error: null }) };
     },
   };
   const { getSubmissionOwner } = await import("./data");
@@ -62,7 +62,7 @@ test("getSubmissionOwner returns the owning user_id", async () => {
 test("getSubmissionOwner returns null when the submission doesn't exist", async () => {
   const fakeSb = {
     from() {
-      return { select() { return this; }, eq() { return this; }, single: async () => ({ data: null, error: { message: "not found" } }) };
+      return { select() { return this; }, eq() { return this; }, maybeSingle: async () => ({ data: null, error: { message: "not found" } }) };
     },
   };
   const { getSubmissionOwner } = await import("./data");
@@ -75,10 +75,10 @@ test("getLastSubmission returns the latest submission + evaluation", async () =>
     from(table: string) {
       if (table === "submissions") {
         return { select() { return this; }, eq() { return this; }, order() { return this; }, limit() { return this; },
-          single: async () => ({ data: { id: "sub-9", type: "work_product", intent: "i", text: "hello" }, error: null }) };
+          maybeSingle: async () => ({ data: { id: "sub-9", type: "work_product", intent: "i", text: "hello" }, error: null }) };
       }
       return { select() { return this; }, eq() { return this; }, order() { return this; }, limit() { return this; },
-        single: async () => ({ data: { id: "ev-9", result_json: { fix_this_first: "x", criteria: {} } }, error: null }) };
+        maybeSingle: async () => ({ data: { id: "ev-9", result_json: { fix_this_first: "x", criteria: {} } }, error: null }) };
     },
   };
   const { getLastSubmission } = await import("./data");
@@ -92,10 +92,10 @@ test("getLastSubmission returns null when the last submission was not_evaluable"
     from(table: string) {
       if (table === "submissions") {
         return { select() { return this; }, eq() { return this; }, order() { return this; }, limit() { return this; },
-          single: async () => ({ data: { id: "sub-9", type: "work_product", intent: "i", text: "hello" }, error: null }) };
+          maybeSingle: async () => ({ data: { id: "sub-9", type: "work_product", intent: "i", text: "hello" }, error: null }) };
       }
       return { select() { return this; }, eq() { return this; }, order() { return this; }, limit() { return this; },
-        single: async () => ({ data: { id: "ev-9", result_json: { not_evaluable: true, reason: "gibberish" } }, error: null }) };
+        maybeSingle: async () => ({ data: { id: "ev-9", result_json: { not_evaluable: true, reason: "gibberish" } }, error: null }) };
     },
   };
   const { getLastSubmission } = await import("./data");
@@ -106,7 +106,7 @@ test("getLastSubmission returns null when the last submission used doNotStore", 
   const fakeSb = {
     from() {
       return { select() { return this; }, eq() { return this; }, order() { return this; }, limit() { return this; },
-        single: async () => ({ data: { id: "sub-9", type: "work_product", intent: "i", text: "[not stored at user request]" }, error: null }) };
+        maybeSingle: async () => ({ data: { id: "sub-9", type: "work_product", intent: "i", text: "[not stored at user request]" }, error: null }) };
     },
   };
   const { getLastSubmission } = await import("./data");

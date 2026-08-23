@@ -30,7 +30,7 @@ export async function getEvaluationLevels(
 ): Promise<Record<CriterionId, Level> | null> {
   const { data, error } = await sb.from("evaluations")
     .select("result_json").eq("submission_id", submissionId)
-    .order("created_at", { ascending: false }).limit(1).single();
+    .order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (error || !data) return null;
   const r = (data as any).result_json as EvaluationResult;
   if ("not_evaluable" in r && r.not_evaluable) return null;
@@ -65,7 +65,7 @@ export async function getSubmissionOwner(
   submissionId: string, sb: Sb = getServerClient()
 ): Promise<string | null> {
   const { data, error } = await sb.from("submissions")
-    .select("user_id").eq("id", submissionId).single();
+    .select("user_id").eq("id", submissionId).maybeSingle();
   if (error || !data) return null;
   return (data as any).user_id as string;
 }
@@ -86,7 +86,7 @@ export async function getLastSubmission(
     .select("id, type, intent, text")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
-    .limit(1).single();
+    .limit(1).maybeSingle();
   if (subErr || !sub) return null;
   if ((sub as any).text === "[not stored at user request]") return null;
 
@@ -94,7 +94,7 @@ export async function getLastSubmission(
     .select("id, result_json")
     .eq("submission_id", (sub as any).id)
     .order("created_at", { ascending: false })
-    .limit(1).single();
+    .limit(1).maybeSingle();
   if (evErr || !ev) return null;
   const result = (ev as any).result_json as EvaluationResult;
   if ("not_evaluable" in result && result.not_evaluable) return null;

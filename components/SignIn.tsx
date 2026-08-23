@@ -1,25 +1,48 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getBrowserClient } from "@/lib/supabase/client";
+
+// Supabase enforces a per-address resend cooldown (default 60s). Gate the button locally so
+// an impatient user can't hammer /auth/v1/otp into a cascade of 429s (seen in prod logs).
+const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [cooldown, setCooldown] = useState(0);
   const sb = getBrowserClient();
   const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : undefined;
 
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  function isRateLimit(msg: string) {
+    const m = msg.toLowerCase();
+    return m.includes("rate limit") || m.includes("too many") || m.includes("429") || m.includes("seconds");
+  }
+
   async function magic() {
-    if (!email) return;
+    if (!email || loading || cooldown > 0) return;
     setLoading(true);
     setErrorMsg("");
     try {
       const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
       if (error) {
-        setErrorMsg(error.message || "Couldn't send sign-in link.");
+        // On a rate-limit, don't surface Supabase's raw copy — start the cooldown and reassure.
+        if (isRateLimit(error.message || "")) {
+          setCooldown(RESEND_COOLDOWN_SECONDS);
+          setErrorMsg("We just sent a link — check your inbox. You can try again in a moment.");
+        } else {
+          setErrorMsg(error.message || "Couldn't send sign-in link.");
+        }
       } else {
         setSent(true);
+        setCooldown(RESEND_COOLDOWN_SECONDS);
       }
     } catch {
       setErrorMsg("An unexpected error occurred.");
@@ -72,7 +95,7 @@ export default function SignIn() {
         />
         <button
           onClick={magic}
-          disabled={!email || loading}
+          disabled={!email || loading || cooldown > 0}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -85,11 +108,11 @@ export default function SignIn() {
             fontWeight: 800,
             fontSize: "15px",
             border: "none",
-            opacity: !email || loading ? 0.5 : 1,
+            opacity: !email || loading || cooldown > 0 ? 0.5 : 1,
             transition: "transform var(--duration-fast) var(--ease-standard)",
           }}
         >
-          {loading ? "Sending…" : "Email me a link ↗"}
+          {loading ? "Sending…" : cooldown > 0 ? `Resend in ${cooldown}s` : "Email me a link ↗"}
         </button>
       </div>
       {errorMsg && (
