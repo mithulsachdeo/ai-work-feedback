@@ -540,8 +540,17 @@ LAYER 2 — Did you use AI well? (infer from signals in the text; HEDGE — say 
 - owned: The user's own thinking and context vs. a generic AI paste (engagement).
 - understood: Could the user explain/defend this if challenged (under-use / AI-as-crutch detector).
 
-USER'S ROLE: if given below, it is context only — you may let it inform which examples or
-phrasing feel natural, but it never changes the standard any criterion is held to.
+USER'S ROLE: if given below, it is context only — it never changes the standard any
+criterion is held to, only how findings are communicated. For the LAYER 2 criteria
+(verified, owned, understood) and for fix_this_first specifically, where a role-relevant
+analogy would genuinely clarify the point faster than plain phrasing, use one (e.g. for
+an engineer: "like merging code without running tests"; for a Product/BA: "like shipping
+a feature without checking the metrics") — keep it short, at most ~10-12 words added, an
+accent not a replacement for the point itself. Do not force an analogy into the LAYER 1
+criteria (accuracy, fitness, clarity) or anywhere it would feel contrived — plain
+phrasing is fine there. Do NOT invent a role-based analogy if the role is "Other" or not
+given below — use plain phrasing in that case.
+**(added 2026-08-22, from brainstorming + grilling: role-analogy tailoring)**
 
 For EACH criterion return: level (one of Emerging, Solid, Strong), evidence (one sentence,
 quoting or paraphrasing the user's own text), next_step (the single most useful fix),
@@ -810,6 +819,11 @@ import type { Submission, CriterionId, Level } from "@/lib/llm/types";
 export interface GoldenCase {
   id: string;
   submission: Submission;
+  // (added 2026-08-22, from role-analogy brainstorming) optional — threads through to
+  // buildMessages/evaluate exactly like the real app does. Used for a regression-safety
+  // case proving role-conditioning doesn't shift levels; analogy CONTENT quality is a
+  // manual spot-check, not an automated assertion (see plan Task 21).
+  role?: string;
   // Assertions: each named criterion must come back at (or worse than) `atWorst` and/or at
   // (or better than) `atLeast`, and/or the evidence/next_step must contain a keyword.
   // `atLeast` added 2026-08-21, from rubric-validation pass — without it there was no way to
@@ -917,6 +931,21 @@ export const GOLDEN: GoldenCase[] = [
     // evidence text should note no changes were made, not just assert a level.
     expect: { verified: { atWorst: "Solid", mustMention: "no changes" } },
   },
+  // (added 2026-08-22, from role-analogy brainstorming) Regression-safety case: same
+  // submission as wp-strong-email, but WITH a role set. Proves the strengthened
+  // role-analogy instruction doesn't shift levels — same bounds must still hold. Analogy
+  // CONTENT quality (is it actually a good analogy?) is a manual spot-check in AI Studio,
+  // not something this automated assertion can robustly judge.
+  {
+    id: "role-analogy-does-not-change-score",
+    submission: {
+      type: "work_product",
+      intent: "email to my manager proposing we delay the launch by a week",
+      text: "Hi Sam — I'd like to push the launch to the 14th. Two reasons: the payment flow still fails on 1 in 20 test runs (bug #412, fix ETA Tuesday), and QA hasn't covered mobile. A week gets both done and de-risks the on-call weekend. If you're OK, I'll tell the team today.",
+    },
+    role: "Product/BA",
+    expect: { owned: { atLeast: "Solid" }, clarity: { atLeast: "Solid" }, understood: { atLeast: "Solid" } },
+  },
 ];
 ```
 
@@ -953,7 +982,9 @@ async function main() {
 
   for (const c of GOLDEN) {
     try {
-      const { result } = await evaluate(c.submission, { provider: "gemini", apiKey: key, byo: false });
+      // (added 2026-08-22, from role-analogy brainstorming) thread c.role through, same as
+      // the real app does — exercises role-analogy tailoring for cases that set it.
+      const { result } = await evaluate(c.submission, { provider: "gemini", apiKey: key, byo: false }, undefined, c.role);
 
       if (c.expectNotEvaluable) {
         const ok = "not_evaluable" in result && result.not_evaluable === true;
@@ -1792,6 +1823,14 @@ export async function POST(req: NextRequest) {
   const apiKey = byoKey || process.env.GEMINI_API_KEY!;
 
   // Scope guardrail: keep this on-purpose. It is NOT a general assistant.
+  // (fixed 2026-08-22, from live UI check) the Gemini adapter forces
+  // responseMimeType: "application/json" for ALL calls (it's shared with evaluate()), and the
+  // OpenAI adapter likewise forces response_format: json_object — both unconditionally, since
+  // Task 5 gives every provider one uniform signature. Without an explicit JSON contract here,
+  // Gemini/OpenAI invent their own wrapper shape (observed: `{"response": "..."}`) and it was
+  // rendered raw in SideQuestions.tsx. Fix: ask ALL THREE providers for the same tiny JSON
+  // shape explicitly, then parse it below with a plain-text fallback for Anthropic (which
+  // doesn't force JSON mode and may still just answer in prose despite the instruction).
   const system =
     "You are a tutor INSIDE a writing-feedback tool. You may ONLY help with: the user's current " +
     "submission, the feedback they just received, or how to use AI well and improve their own " +
@@ -1799,12 +1838,26 @@ export async function POST(req: NextRequest) {
     "unrelated coding, or a request to DO a task for them like writing/translating/answering " +
     "something), politely decline in one sentence and redirect them back to their work — do NOT " +
     "answer it. For in-scope questions: answer clearly in 2-4 sentences, then in one short sentence " +
-    "point them back to the step they were on. Never let a tangent take over.";
+    "point them back to the step they were on. Never let a tangent take over. " +
+    'Return EXACTLY this JSON shape, no markdown fences, no extra text: {"answer": "<your reply>"}.';
   const user2 = `The user is currently: ${context || "reviewing their feedback"}.\nQuestion: ${question}`;
 
+  // Unwraps the {"answer": "..."} contract above; falls back to the raw (code-fence-stripped)
+  // text if a provider ignores the instruction and replies in plain prose.
+  function extractAnswer(raw: string): string {
+    const stripped = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+    try {
+      const parsed = JSON.parse(stripped);
+      if (parsed && typeof parsed.answer === "string") return parsed.answer;
+    } catch {
+      // Not valid JSON — treat as the plain-text answer itself.
+    }
+    return stripped;
+  }
+
   try {
-    const answer = await callers[provider](system, user2, apiKey);
-    return NextResponse.json({ answer });
+    const raw = await callers[provider](system, user2, apiKey);
+    return NextResponse.json({ answer: extractAnswer(raw) });
   } catch {
     return NextResponse.json({ error: "Couldn't answer that just now — try again." }, { status: 502 });
   }
@@ -2460,6 +2513,731 @@ git commit -m "chore: production config + smoke-test fixes"
 
 ---
 
+## Task 18: Product feedback capture (added 2026-08-22, post-launch-readiness gap)
+
+**Problem:** the MVP had no way for users to tell us how the product is actually
+working for them — no rating, no structured signal, no free text. Added after Task 17
+confirmed the app is otherwise launch-ready, because shipping without any feedback
+channel would mean flying blind on the thing case-study success depends on: real user
+reaction.
+
+**Files:**
+- Create: `supabase/migrations/0002_product_feedback.sql`
+- Create: `app/api/product-feedback/route.ts`
+- Create: `components/FeedbackWidget.tsx`
+- Edit: `app/app/page.tsx` (header trigger), `components/FeedbackView.tsx` (one-time
+  nudge after first feedback view)
+
+**Interfaces:**
+- Produces: `POST /api/product-feedback` accepting
+  `{ rating: number, tags: string[], comment?: string, page?: string }`, returning
+  `{ ok: true }` or a 400 with a validation error. Auth-gated (401 if not signed in) —
+  ties feedback to `user_id` so we can correlate with role/usage later without
+  collecting anything identifying beyond the existing account.
+- `FeedbackWidget` is a self-contained modal: trigger + form + submit + thank-you state.
+  Mounted twice: as a small persistent "Feedback" link in the app header (next to
+  `QuotaBanner`), and as a one-time dismissible nudge shown the first time a user views
+  a scored `FeedbackView` (never shown again after dismissed or submitted once, tracked
+  via `localStorage`, not a new DB column — this is a UI nag-suppression detail, not
+  data worth persisting server-side).
+
+- [ ] **Step 1: DB migration**
+
+```sql
+create table if not exists product_feedback (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id),
+  rating smallint not null check (rating between 1 and 5),
+  tags text[] not null default '{}',
+  comment text,
+  page text,
+  created_at timestamptz not null default now(),
+  constraint has_signal check (
+    array_length(tags, 1) > 0 or (comment is not null and length(trim(comment)) > 0)
+  )
+);
+
+alter table product_feedback enable row level security;
+-- No browser-facing policy, same pattern as submissions/evaluations/feedback_outcomes:
+-- all access goes through the service-role server client in the API route below.
+```
+
+Apply this migration to the live Supabase project the same way Task 2's was applied
+(dashboard SQL editor or `supabase db push`) — do not skip this, the API route will
+fail without the table existing live.
+
+- [ ] **Step 2: `POST /api/product-feedback`**
+
+```ts
+import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
+import { getServerClient } from "@/lib/supabase/server";
+import { track } from "@/lib/events";
+
+export async function POST(req: NextRequest) {
+  const cookieStore = cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { cookies: {
+        get: (n) => cookieStore.get(n)?.value,
+        set: (n, v, o) => cookieStore.set(n, v, o),
+        remove: (n, o) => cookieStore.set(n, "", o),
+    } }
+  );
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+
+  const { rating, tags, comment, page } = await req.json();
+  const cleanTags: string[] = Array.isArray(tags) ? tags.filter((t) => typeof t === "string") : [];
+  const cleanComment = typeof comment === "string" ? comment.trim() : "";
+
+  if (typeof rating !== "number" || rating < 1 || rating > 5) {
+    return NextResponse.json({ error: "Rating must be 1-5." }, { status: 400 });
+  }
+  if (cleanTags.length === 0 && cleanComment.length === 0) {
+    return NextResponse.json({ error: "Add a tag or a comment." }, { status: 400 });
+  }
+
+  const db = getServerClient();
+  const { error } = await db.from("product_feedback").insert({
+    user_id: user.id,
+    rating,
+    tags: cleanTags,
+    comment: cleanComment || null,
+    page: typeof page === "string" ? page.slice(0, 200) : null,
+  });
+  if (error) return NextResponse.json({ error: "Couldn't save feedback." }, { status: 500 });
+
+  // Mirrors rating + tags to PostHog for a quick dashboard view — deliberately excludes
+  // the free-text comment, which may contain more personal reflection than a rating/tag
+  // and doesn't need to leave the DB to be useful in aggregate.
+  track(user.id, "product_feedback_submitted", { rating, tags: cleanTags, hasComment: cleanComment.length > 0 });
+
+  return NextResponse.json({ ok: true });
+}
+```
+
+- [ ] **Step 3: `FeedbackWidget.tsx`**
+
+A modal component styled consistently with the rest of the app (design.md tokens,
+matching `ByoKeyModal.tsx`'s existing modal pattern for structure/overlay/close
+behavior — reuse that pattern rather than inventing a new one). Contents:
+
+- 1-5 rating control (numbered buttons or stars — your call, stay consistent with the
+  app's existing pill/button idiom).
+- Six tag checkboxes: "Felt accurate", "Felt too generic", "Helped me improve my work",
+  "Confusing to use", "Was too slow", "Something didn't work".
+- Optional free-text textarea (placeholder like "Anything else? (optional)").
+- Submit button disabled until: rating is set AND (at least one tag checked OR comment
+  non-empty).
+- On submit: POST to `/api/product-feedback` with `page: window.location.pathname`;
+  show a brief thank-you state, then auto-close after ~1.5s or on a manual close click.
+- Props: `{ onClose: () => void; trigger?: "header" | "nudge" }` (trigger is just for
+  copy/analytics distinction, not behavior).
+
+- [ ] **Step 4: Wire the header trigger**
+
+In `app/app/page.tsx`, add a small "Feedback" text link/button in the header, near
+`QuotaBanner` (around line 212). Clicking opens `FeedbackWidget`.
+
+- [ ] **Step 5: Wire the one-time nudge**
+
+In `components/FeedbackView.tsx`, on first render of a genuinely scored (not
+`not_evaluable`) result, check `localStorage.getItem("feedback_nudge_shown")`. If unset,
+show a small dismissible inline prompt ("Got a sec? Tell us how this feedback landed —
+[Give feedback]") near the bottom of the feedback view. Clicking it opens
+`FeedbackWidget`; dismissing it or submitting feedback sets
+`localStorage.setItem("feedback_nudge_shown", "1")` so it never shows again for that
+browser. This is a soft nudge, not a blocking modal — don't interrupt the user's ability
+to read their feedback or ask a side-question.
+
+- [ ] **Step 6: Typecheck + build**
+
+Run: `npx tsc --noEmit && npm run build`
+Expected: compiles.
+
+- [ ] **Step 7: Manual verification**
+
+Submit product feedback with each valid combination (rating + tag only, rating +
+comment only, rating + both) and confirm each succeeds; confirm rating-only with no tag
+and no comment is correctly rejected client-side (button stays disabled). Confirm a row
+appears in `product_feedback` in Supabase with the correct `user_id`, and that a
+`product_feedback_submitted` event arrives in PostHog with `rating`/`tags` but no
+`comment` field.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add supabase/migrations/0002_product_feedback.sql app/api/product-feedback/route.ts components/FeedbackWidget.tsx app/app/page.tsx components/FeedbackView.tsx
+git commit -m "feat: product feedback capture (rating + tags + free text)"
+```
+
+---
+
+## Task 19: Light/dark theme toggle (brand consistency + user choice, added 2026-08-22)
+
+**Problem:** the landing page uses a bold near-black hero card inset on a warm-paper
+page background; every in-app screen instead uses a plain flat warm-off-white
+background with gray-bordered pills — it reads as a disconnected, generic UI rather
+than the same "Whetstone" brand. Revised human decision (supersedes an earlier
+static-dark-only version of this task): rather than forcing the in-app screens into a
+single fixed dark treatment, build a **user-toggleable light/dark theme** that mirrors
+the same "framed card" composition in both directions, applied site-wide (landing +
+in-app):
+
+- **Dark theme** (current landing-page look, becomes the default): thin warm-paper
+  outer frame, large near-black rounded "working card" holds the actual content, light
+  text on the card.
+- **Light theme** (the reverse composition, not a separate design): thin near-black
+  outer frame, large warm-paper rounded "working card" holds the content, dark text on
+  the card.
+
+Both variants keep the same structural signature — a framed working-area card, per
+design.md §2.2 ("large color changes define sections... rounded containers") — so the
+toggle changes *which* colors go where, not the underlying composition. This applies to
+**both** the landing page and every in-app screen; the whole product respects one theme
+choice, toggleable at any time, persisted across visits.
+
+**Files:**
+- Edit: `app/globals.css` (new theme-variable layer)
+- Edit: `app/layout.tsx` (no-flash inline theme-init script)
+- Create: `components/ThemeToggle.tsx`
+- Edit: `app/page.tsx` (landing — convert hardcoded dark colors to theme variables, mount `ThemeToggle`)
+- Edit: `components/SignIn.tsx` (convert hardcoded colors to theme variables)
+- Edit: `app/app/page.tsx` (main wrapper, header, banners — convert to theme variables, mount `ThemeToggle`)
+- Edit: `components/PurposePicker.tsx`
+- Edit: `components/SubmissionForm.tsx`
+- Edit: `components/FeedbackView.tsx`
+- Edit: `components/QuotaBanner.tsx`
+- Edit: `components/ByoKeyModal.tsx`
+- Edit: `components/SideQuestions.tsx`
+- Edit: `components/FeedbackWidget.tsx`
+- Edit: `components/RoleConsent.tsx` (if it renders its own background/text colors)
+
+- [ ] **Step 1: Define a theme-variable layer in `app/globals.css`**
+
+Keep the existing raw tokens (`--color-ink`, `--color-paper`, `--color-lime`, etc.) as
+the underlying palette — don't rename or remove them, accent colors stay identical in
+both themes. Add a **semantic layer** on top that a `data-theme` attribute on `<html>`
+switches between. Default (no attribute, or `data-theme="dark"`) is the dark theme;
+`data-theme="light"` is the reverse:
+
+```css
+:root,
+[data-theme="dark"] {
+  --theme-frame-bg: var(--color-paper);
+  --theme-frame-text: var(--color-ink);
+  --theme-card-bg: var(--color-ink);
+  --theme-card-text: var(--color-paper);
+  --theme-card-text-muted: rgba(255, 252, 245, 0.72);
+  --theme-card-border: rgba(255, 252, 245, 0.2);
+  --theme-card-surface: rgba(255, 252, 245, 0.06);
+  --theme-card-surface-hover: rgba(255, 252, 245, 0.1);
+}
+
+[data-theme="light"] {
+  --theme-frame-bg: var(--color-ink);
+  --theme-frame-text: var(--color-paper);
+  --theme-card-bg: var(--color-paper);
+  --theme-card-text: var(--color-ink);
+  --theme-card-text-muted: var(--color-text-muted);
+  --theme-card-border: var(--color-border);
+  --theme-card-surface: rgba(23, 25, 25, 0.06);
+  --theme-card-surface-hover: rgba(23, 25, 25, 0.1);
+}
+```
+
+Update `html, body` in the same file to use `background-color: var(--theme-frame-bg)`
+instead of the current hardcoded `var(--color-paper)`.
+
+- [ ] **Step 2: No-flash theme init in `app/layout.tsx`**
+
+`layout.tsx` is a server component and can't read `localStorage` directly. Add a tiny
+inline script in `<head>`, rendered via `dangerouslySetInnerHTML`, that runs before
+React hydrates and sets the attribute synchronously — this is the standard
+no-flash-of-wrong-theme pattern:
+
+```tsx
+<script
+  dangerouslySetInnerHTML={{
+    __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}}catch(e){}})();`,
+  }}
+/>
+```
+
+Place it as the first child of `<head>` (or immediately inside `<html>` before `<body>`
+if this Next.js version's `<head>` handling requires that — check how the existing
+`<html className={manrope.variable}>` is structured and place it so it executes before
+paint).
+
+- [ ] **Step 3: `ThemeToggle.tsx`**
+
+A small client component — a pill/icon button consistent with the app's existing
+button idiom (see `QuotaBanner.tsx` or the header pills for the visual pattern to
+match). Behavior:
+
+```tsx
+"use client";
+import { useEffect, useState } from "react";
+
+export default function ThemeToggle() {
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    const current = document.documentElement.getAttribute("data-theme");
+    setTheme(current === "light" ? "light" : "dark");
+  }, []);
+
+  function toggle() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch {}
+  }
+
+  return (
+    <button onClick={toggle} /* style consistent with existing header pills */>
+      {theme === "dark" ? "Light mode" : "Dark mode"}
+    </button>
+  );
+}
+```
+
+No React context needed — the DOM attribute is the single source of truth, this
+component just reads/writes it. Mount one instance in the landing hero (small, corner
+placement) and one in the in-app header (near the `Feedback` link / `QuotaBanner`).
+
+- [ ] **Step 4: Convert every file in the Files list to the theme-variable layer**
+
+Systematic substitution — apply the same rule everywhere, this is mechanical, not a
+place for new creative decisions:
+
+| Current (hardcoded) | Becomes (theme-aware) |
+|---|---|
+| Outer page/hero background: `var(--color-paper)` (in-app) or the near-black hero container background (landing/SignIn) | `var(--theme-frame-bg)` for the outermost frame; the working-area card itself uses `var(--theme-card-bg)` |
+| Text on the working card: `var(--color-ink)` (in-app) or `var(--color-paper)` (landing hero text) | `var(--theme-card-text)` |
+| Muted/secondary text on the card: `var(--color-text-muted)` or hardcoded dark-mode rgba | `var(--theme-card-text-muted)` |
+| Borders on the card: `var(--color-border)` or `var(--color-border-dark)` | `var(--theme-card-border)` |
+| Nested subtle-fill surfaces (chips, hover states): `rgba(23,25,25,0.06)` or similar | `var(--theme-card-surface)` (hover: `var(--theme-card-surface-hover)`) |
+
+**Do NOT change:**
+- Text inputs/textareas using `background: "#ffffff"` — a white field reads fine on
+  both a near-black card (already proven on the landing hero) and a paper card (it's
+  the same as the card itself, just add a subtle border in that case using
+  `var(--theme-card-border)` so it's still visible against a same-color card). Use your
+  judgment to keep inputs legible in both themes; note any adjustment you make.
+- Accent colors (`--color-lime`, `--color-blue`, `--color-lavender`, `--color-mint`)
+  and ink-on-accent combinations (e.g. lime CTA buttons: `background: var(--color-lime)`,
+  `color: var(--color-ink)`) — these stay identical in both themes, per design.md's own
+  rule that text on accent surfaces uses `#171919` regardless of theme.
+- Component logic, props, state, API calls — visual/theme-variable-only pass.
+
+- [ ] **Step 5: Typecheck + build**
+
+Run: `npx tsc --noEmit && npm run build`
+
+- [ ] **Step 6: Visual pass in both themes**
+
+Run the dev server. For **both** `data-theme="dark"` and `data-theme="light"` (toggle
+between them, don't just check one), walk through: landing page, sign-in +
+check-your-email confirmation, purpose picker, submission form (all 3 types incl.
+dual-capture boxes), feedback view (chips, fix-first box, side-questions), BYO-key
+modal, quota banner, feedback widget. Confirm every screen is fully legible in both
+themes — no leftover hardcoded colors from one theme leaking into the other, no
+low-contrast text (this is exactly the class of bug already found once in `SignIn.tsx`
+and doubles in surface area with two themes to check). Also confirm: reload the page
+after toggling to light — it should load in light theme with no visible flash of dark
+first (the point of Step 2).
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add app/globals.css app/layout.tsx components/ThemeToggle.tsx app/page.tsx components/SignIn.tsx app/app/page.tsx components/PurposePicker.tsx components/SubmissionForm.tsx components/FeedbackView.tsx components/QuotaBanner.tsx components/ByoKeyModal.tsx components/SideQuestions.tsx components/FeedbackWidget.tsx components/RoleConsent.tsx
+git commit -m "feat: light/dark theme toggle, consistent framed-card composition in both"
+```
+
+---
+
+## Task 20: Rotating pill carousel + situation-framed copy (added 2026-08-22)
+
+**Problem, via `/superpowers:brainstorming`:** the landing page's "Check any of:"
+pills and the `work_product` purpose-picker hint listed document *formats* ("emails,
+summaries, deck text, doc") — an itemized list that implicitly (and wrongly) suggested
+the product only works on those specific formats. The rubric engine itself is fully
+generic (confirmed: a LinkedIn post scored correctly in manual testing) — this was a
+communication problem, not a functional one. Brainstormed reframe: examples aren't the
+issue, *format-naming* is — situations ("before you hit send on that email") read as
+open-ended in a way a list of nouns never does, because situations don't imply a
+closed taxonomy the way document formats do.
+
+**Design, built and approved locally before committing (per explicit human
+instruction — this was built and reviewed running on `localhost` first, iterated once
+on an animation-timing issue, then approved):**
+
+- **`app/page.tsx`** — "Check any of:" label changed to **"Moments like:"**; the static
+  4-pill row replaced with a `RotatingPills` component showing ONE situation-framed
+  line at a time, auto-advancing ~3.5s with a smooth transition, dot pagination (active
+  dot `var(--color-lime)`), pause-on-hover, `prefers-reduced-motion` fallback,
+  theme-aware. Six lines, mixed across all 3 submission types:
+  "Before you hit send on that email" / "Before you post that update" / "Before the
+  client sees that proposal" / "Before you present those slides" / "Before you ship
+  that automation" / "Before you're asked to defend your understanding."
+- **Animation-timing fix applied during local review:** the organic tilt (design.md's
+  "slight imperfect rotation" device) must be baked into the entrance transform from
+  the first frame — a pill's rotation angle is constant for its whole time on screen
+  (enter, hold, exit); only position/opacity animate. The first build animated
+  rotation as a separate second step (appear straight, then snap-tilt), which read as
+  mechanical — fixed before approval.
+- **`components/PurposePicker.tsx`** — the three `hint` fields shortened to situational
+  one-liners (kept deliberately shorter than the landing pills, since an already
+  signed-up user needs orientation, not convincing):
+  - `work_product`: "Anything you're about to send or publish."
+  - `implementation_logic`: "How you'd explain it to whoever inherits it."
+  - `concept_articulation`: "What you'd say if someone asked you to explain it."
+  - `id`, `badge`, `q` fields unchanged.
+
+**Files:** `components/RotatingPills.tsx` (new), `app/page.tsx`,
+`components/PurposePicker.tsx`.
+
+- [ ] **Step 1: Confirm local build is clean**
+
+Run: `npx tsc --noEmit && npm run build` (should already pass from local development).
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add components/RotatingPills.tsx app/page.tsx components/PurposePicker.tsx
+git commit -m "feat: rotating situation-framed pill carousel on landing + shorter in-app hints"
+```
+
+- [ ] **Step 3: Push and redeploy**
+
+```bash
+git push
+```
+
+Confirm Vercel redeploys and do a final check on the live production URL — both
+themes, both the landing carousel and the in-app purpose picker.
+
+---
+
+## Task 21: Role-based analogies in feedback explanations (added 2026-08-22)
+
+**Problem, via `/superpowers:brainstorming` + `/grilling`:** the human personally
+experienced feedback explanations feeling generic/slow to parse. `role` was already
+threaded through the rubric prompt as "context only" for natural phrasing, but wasn't
+doing much — this task strengthens it specifically toward role-relevant analogies,
+while explicitly preserving the already-locked invariant that role never changes a
+criterion's level.
+
+**Approach chosen (of three considered) — deepen the existing single-call
+role-conditioning, not a second LLM call or static UI templates:**
+- **Rejected: a second "role-blind score, then role-rephrase" LLM call.** Architecturally
+  more bulletproof (role-blindness by construction), but doubles Gemini calls per
+  evaluation — directly working against the already-documented, only-partially-mitigated
+  free-tier rate-limit exposure (see the Task 6.5 rate-limit grill log entry above) — and
+  adds a new prompt/parse/failure path days before launch. Good v1.1 candidate if this
+  becomes a heavily-scrutinized feature.
+- **Rejected: static, hand-authored per-role UI templates (no LLM change).** Zero
+  rubric-prompt risk, but generic — not grounded in the user's actual submission, so it
+  wouldn't really solve "hard to parse fast." Scales badly (6 criteria × 3 levels × N
+  roles of hand-written copy).
+- **Chosen: strengthen the existing single-call role instruction** to explicitly favor
+  short, role-relevant analogies for Layer 2 criteria + `fix_this_first`. No new LLM
+  call, no new failure surface, validation cost is the same known/bounded golden-set
+  rerun already used once for the `not_evaluable` fix.
+
+**Design decisions, from the grilling round (all agreed):**
+1. Analogy guidance is biased toward Layer 2 (verified/owned/understood) + `fix_this_first`
+   — Layer 1 (accuracy/fitness/clarity) is about factual correctness, where analogies are
+   often contrived; instruction explicitly does not force them there.
+2. No analogy attempted for `role === "Other"` or unset role — falls back to plain
+   phrasing, since there's nothing meaningful to analogize from.
+3. Explicit word-budget on the analogy instruction (~10-12 words added) to prevent
+   bloating the "bite-sized UI" fields.
+4. Validation: one new golden case (`role-analogy-does-not-change-score`) proves the
+   instruction doesn't shift levels — analogy *content* quality is a manual spot-check
+   in AI Studio across a few roles, same discipline as the original rubric validation,
+   not something an automated keyword assertion can robustly judge.
+5. Applies uniformly across all 3 submission types — role is a property of the user, not
+   the submission.
+6. `fix_this_first` gets the same treatment as Layer 2 — highest-visibility field, most
+   valuable place for a fast-clarifying analogy.
+
+**Files:**
+- Edit: `lib/llm/prompt.ts` (the `RUBRIC` string's `USER'S ROLE` clause — already
+  updated in Task 4's code block above, copy it from there)
+- Edit: `evals/golden-set.ts` (`GoldenCase.role` field, new
+  `role-analogy-does-not-change-score` case — already in Task 6.5's code block above)
+- Edit: `evals/run.ts` (thread `c.role` into the `evaluate()` call — already updated in
+  Task 6.5's code block above)
+
+- [ ] **Step 1: Apply the `RUBRIC` and golden-set changes**
+
+Copy the updated `USER'S ROLE` clause from Task 4's `RUBRIC` string, the new
+`role-analogy-does-not-change-score` case and `GoldenCase.role` field from Task 6.5's
+`golden-set.ts`, and the `role`-threading change to `run.ts`'s `evaluate()` call —
+these were all written directly into their original task sections above rather than
+duplicated here, to keep `prompt.ts`/`golden-set.ts`/`run.ts` each having one source of
+truth in this plan.
+
+- [ ] **Step 2: Run the full golden-set harness live**
+
+Run: `npm run eval`
+Expected: all 10 cases pass (9 existing + the new role case), including the new case's
+regression-safety assertion.
+
+- [ ] **Step 3: Manual spot-check across a few roles in AI Studio**
+
+Using the same production model (`gemini-3.5-flash-lite`) and the plain-chat-window
+method from the original rubric validation, submit 1-2 sample pieces of work with
+different `role` values (e.g. "Founder" and "Sales") through the real system prompt +
+user message format and read the actual analogy output. This is a quality check a
+harness can't do — confirm analogies feel natural and genuinely clarifying, not forced.
+Report what you see; if an analogy reads as strained or generic, note it — this may
+mean tightening the instruction further, not necessarily a blocker.
+
+- [ ] **Step 4: Typecheck + build**
+
+Run: `npx tsc --noEmit && npm run build`
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add lib/llm/prompt.ts evals/golden-set.ts evals/run.ts
+git commit -m "feat: role-relevant analogies in feedback explanations (Layer 2 + fix_this_first)"
+```
+
+- [ ] **Step 6: Push and redeploy**
+
+```bash
+git push
+```
+
+---
+
+## Task 22: Suggested follow-up questions + abuse-protected coach loop (added 2026-08-22)
+
+**Problem, via `/superpowers:brainstorming` + `/grilling`:** users landing on their
+feedback don't always know what to ask the coach. Add up to 3 clickable suggested
+follow-up questions; clicking one fires it through the same path as typing one, shows
+the answer, and — this is the important part — the answer itself proposes a new set of
+up to 3 follow-ups, so the loop continues indefinitely if the user wants to keep going.
+
+**Design decisions (all from brainstorming/grilling, settled):**
+1. **No new LLM calls.** The initial 3 suggestions come from `evaluate()`'s existing
+   call (new `suggested_questions` field in its JSON response). Every subsequent round
+   comes from `/api/ask`'s existing call (new `suggestions` field alongside `answer`).
+   Rejected a second dedicated "generate suggestions" call — same reasoning as Task 21,
+   it would double Gemini calls against the already-fragile shared free-tier ceiling for
+   no real benefit over folding it into calls that already happen.
+2. **Two new abuse-protection limits on `/api/ask`, both server-enforced (not
+   client-side-only — Vercel serverless means an in-memory counter isn't reliable
+   across instances, so this needs a DB-backed check):**
+   - **10 questions per evaluation** (`MAX_QUESTIONS_PER_FEEDBACK`) — bounds one user
+     looping indefinitely on a single piece of feedback.
+   - **5 questions per minute per user** (`ASK_RPM_LIMIT`) — bounds burst abuse against
+     the shared Gemini free-tier ceiling (~15 RPM total, shared across all users — see
+     the Task 6.5 rate-limit grill log). Generous for real human-paced use, tight enough
+     that one user can't monopolize the shared ceiling.
+3. **These do NOT share `/api/evaluate`'s `DAILY_QUOTA`** — considered and explicitly
+   rejected merging them: the new suggestion-loop UX specifically encourages chaining
+   many coach questions per feedback, and sharing one pool would mean deep coaching
+   engagement (a good outcome) punishes the user by depleting their ability to check
+   new work that day. This reaffirms the original Task 11 decision to keep them
+   separate, for an even stronger reason than before.
+4. **BYO-key requests bypass both new caps** — same logic as `DAILY_QUOTA`: the caps
+   exist to protect the *shared* key, not to limit usage in general; a BYO key isn't
+   that shared resource.
+5. **`/api/ask` gets the same rate-limit backoff+retry as `/api/evaluate`** (Task 10) —
+   reuses the proven `isRateLimitError` + ~2.5s-backoff-then-one-retry pattern, so an
+   occasional shared-ceiling hit degrades gracefully instead of erroring mid-conversation.
+6. **New PostHog events** `ask_quota_hit` (per-feedback cap) and `ask_throttled`
+   (per-minute cap) — both limits use guessed thresholds; without visibility into how
+   often real users hit them, there's no way to tune them later.
+7. **Defensive parsing:** if `suggested_questions`/`suggestions` is missing or
+   malformed, fall back to an empty array — never block the actual answer/evaluation
+   over a missing bonus field.
+8. A "Revise & re-check" resubmission gets a new `evaluation_id`, so it naturally gets
+   its own fresh 10-question budget — no special handling needed.
+
+**Files:**
+- Create: `supabase/migrations/0003_ask_requests.sql`
+- Edit: `lib/llm/types.ts`, `lib/llm/schema.ts`, `lib/llm/prompt.ts` (RUBRIC JSON shape)
+- Edit: `constants.ts` (`MAX_QUESTIONS_PER_FEEDBACK`, `ASK_RPM_LIMIT`)
+- Edit: `app/api/ask/route.ts` (caps, backoff/retry, suggestions field)
+- Edit: `app/api/evaluate/route.ts` (pass `suggested_questions` through to the client
+  response, alongside the existing result)
+- Edit: `components/FeedbackView.tsx` (pass `evaluationId` + initial suggestions down)
+- Edit: `components/SideQuestions.tsx` (suggestion chips + loop + count display)
+
+- [ ] **Step 1: DB migration**
+
+```sql
+create table if not exists ask_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id),
+  evaluation_id uuid not null references evaluations(id),
+  created_at timestamptz not null default now()
+);
+create index if not exists ask_requests_evaluation_idx on ask_requests(evaluation_id);
+create index if not exists ask_requests_user_time_idx on ask_requests(user_id, created_at);
+
+alter table ask_requests enable row level security;
+-- No browser-facing policy, same pattern as every other content table — all access
+-- goes through the service-role server client in app/api/ask/route.ts.
+```
+
+Apply this to the live Supabase project (dashboard SQL editor or `supabase db push`) —
+same as every prior migration in this plan, do not skip.
+
+- [ ] **Step 2: `constants.ts` additions**
+
+```ts
+export const MAX_QUESTIONS_PER_FEEDBACK = 10; // per evaluation_id, server-enforced
+export const ASK_RPM_LIMIT = 5; // per user per rolling minute, server-enforced
+```
+
+- [ ] **Step 3: `lib/llm/types.ts` — add the new field**
+
+```ts
+export type EvaluationResult =
+  | { not_evaluable: true; reason: string }
+  | { not_evaluable?: false; fix_this_first: string; criteria: Record<CriterionId, CriterionResult>; suggested_questions?: string[] };
+```
+
+- [ ] **Step 4: `lib/llm/schema.ts` — accept the new field**
+
+In the `evaluable` object (the Zod schema), add:
+```ts
+suggested_questions: z.array(z.string().min(1)).max(3).optional(),
+```
+
+- [ ] **Step 5: `lib/llm/prompt.ts` — extend the `RUBRIC` JSON contract**
+
+Add a new instruction paragraph after the `fix_this_first` instruction, and extend the
+returned JSON shape:
+
+```
+Then propose up to 3 short follow-up questions the user might genuinely want to ask a
+coach about this feedback — grounded in what was actually found, specific enough to be
+useful (not "tell me more"). If there's nothing natural to ask, return fewer than 3, or
+none.
+```
+
+Add `"suggested_questions": ["string", "..."]` to the example JSON shape shown in the
+prompt (optional field, 0-3 items).
+
+- [ ] **Step 6: Rewrite `app/api/ask/route.ts`**
+
+Building on the current route (already has auth-gate, length caps, byoProvider
+validation, and the `{"answer": "..."}` JSON contract + `extractAnswer` parser from the
+earlier fix). Add, in order, after the existing validation and before the LLM call:
+
+```ts
+const { evaluationId } = body; // new required field from the client
+if (!evaluationId) return NextResponse.json({ error: "Missing evaluation reference." }, { status: 400 });
+
+if (!byo) {
+  const db = getServerClient();
+  const { count: feedbackCount } = await db
+    .from("ask_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("evaluation_id", evaluationId);
+  if ((feedbackCount ?? 0) >= MAX_QUESTIONS_PER_FEEDBACK) {
+    track(user.id, "ask_quota_hit", { evaluationId });
+    return NextResponse.json({ error: "You've asked a lot about this one — that's the limit for a single check." }, { status: 429 });
+  }
+
+  const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString();
+  const { count: rpmCount } = await db
+    .from("ask_requests")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("created_at", oneMinuteAgo);
+  if ((rpmCount ?? 0) >= ASK_RPM_LIMIT) {
+    track(user.id, "ask_throttled", { evaluationId });
+    return NextResponse.json({ error: "Slow down a little — try again in a moment." }, { status: 429 });
+  }
+}
+```
+
+Update the system prompt's JSON contract to also request suggestions:
+```
+'Return EXACTLY this JSON shape, no markdown fences, no extra text: {"answer": "<your reply>", "suggestions": ["<short natural follow-up>", "..."]}. suggestions is 0-3 items — omit or empty array if there is nothing natural to ask next, never force one.'
+```
+
+Update `extractAnswer` (or add a sibling `extractSuggestions`) to also pull `suggestions`
+from the parsed JSON, defaulting to `[]` if absent/malformed — same defensive-parsing
+discipline as the existing fallback for `answer`.
+
+Wrap the LLM call with the same backoff+retry pattern already in `/api/evaluate`
+(`isRateLimitError`, ~2.5s backoff, one retry, distinct rate-limited error message) —
+copy that logic rather than re-deriving it.
+
+On a successful (non-BYO) call, after returning the response, insert one row into
+`ask_requests` (`user_id`, `evaluation_id`) — only log real processed requests, not
+rejected ones, consistent with how quota consumption works elsewhere in this app.
+
+- [ ] **Step 7: `app/api/evaluate/route.ts` — pass `suggested_questions` through**
+
+The route already returns `result` to the client (containing the full `EvaluationResult`
+including the new optional field by virtue of Step 3's type change) — confirm nothing
+strips it out before the response is sent; no other change needed here.
+
+- [ ] **Step 8: `FeedbackView.tsx` and `SideQuestions.tsx`**
+
+Thread `evaluationId` (already a prop on `FeedbackView`) and the initial
+`result.suggested_questions` (default `[]` if absent) down into `SideQuestions`.
+
+`SideQuestions.tsx` behavior:
+- Render up to 3 suggestion chips (styled consistently with the app's existing pill/
+  chip idiom) above or near the input box.
+- Clicking a chip fires the exact same request path as typing + submitting: POST
+  `/api/ask` with `{ question: <chip text>, context, evaluationId, byoKey?, byoProvider? }`.
+- On response: show the answer (as today), replace the chip set with the response's
+  `suggestions` (or hide the chip row if empty), and increment a running local count.
+- Track total questions asked (chip-click or freeform, both count) against this
+  evaluation. This count is a UI convenience, not the enforcement mechanism — the
+  server's 429 is authoritative. If a 429 comes back for either cap, show its message in
+  place of an answer, disable the input and any remaining chips, and stop — don't retry
+  automatically.
+
+- [ ] **Step 9: Typecheck + build + golden-set rerun**
+
+Run: `npx tsc --noEmit && npm run build && npm run eval`
+Expected: build compiles; all golden-set cases still pass (this changes the `RUBRIC`
+JSON contract, so a rerun is required — same discipline as every prior prompt change in
+this plan). If any case fails, do not loosen assertions — report the raw output.
+
+- [ ] **Step 10: Manual verification**
+
+Run the dev server against real Supabase + Gemini: submit a piece of work, confirm up
+to 3 suggestion chips appear, click one, confirm the answer renders and a new chip set
+appears, repeat a few times to confirm the loop continues. Then verify enforcement:
+temporarily lower `MAX_QUESTIONS_PER_FEEDBACK` (or just ask 11 real questions) and
+confirm the 429 + friendly message appears and further asks are blocked; separately
+confirm rapid-fire questions (6+ within a minute) trigger the throttle message. Confirm
+a BYO-key request bypasses both caps. Restore any temporarily-lowered constant before
+committing.
+
+- [ ] **Step 11: Commit**
+
+```bash
+git add supabase/migrations/0003_ask_requests.sql constants.ts lib/llm/types.ts lib/llm/schema.ts lib/llm/prompt.ts app/api/ask/route.ts app/api/evaluate/route.ts components/FeedbackView.tsx components/SideQuestions.tsx
+git commit -m "feat: suggested follow-up questions + per-feedback/per-minute coach abuse limits"
+```
+
+- [ ] **Step 12: Push and redeploy**
+
+```bash
+git push
+```
+
+---
+
 ## Self-Review
 
 **1. Spec coverage:**
@@ -2670,3 +3448,21 @@ spot-check didn't catch, both from the same root cause.
   live in code per plan instructions and correctly refusing to loosen the assertions to force a
   pass — reported the raw model output instead. Re-run of the harness against the corrected
   prompt is pending as part of the Batch 2 follow-up before Batch 3 starts.
+
+**Execution-time finding (2026-08-22, Task 11, from live UI check after Batch 5b):** the
+side-questions coach reply rendered as raw JSON (`{"response": "..."}`) instead of plain text.
+- **Finding:** `callGemini` (Task 5) unconditionally sets `responseMimeType: "application/json"`
+  for every call — it was designed for the rubric evaluator, but `/api/ask` (Task 11) reuses the
+  same adapter with a plain-text system prompt. Forced into JSON mode with no schema to follow,
+  Gemini invented its own wrapper key. The OpenAI adapter has the identical latent bug (forces
+  `response_format: json_object`) — not yet observed because Gemini is the default provider, but
+  would hit the same failure the first time a user BYOs an OpenAI key.
+- **Fix:** `/api/ask`'s system prompt now explicitly asks all three providers for
+  `{"answer": "<reply>"}`, and the route parses that shape (with code-fence stripping) before
+  returning `answer` to the client — falling back to the raw text if a provider (Anthropic,
+  which doesn't force JSON mode) replies in plain prose despite the instruction. Provider
+  adapters (Task 5) were left unchanged to avoid widening their signature; the fix is scoped to
+  the one route that needed a different contract.
+- Caught by the human during a live end-to-end check of the deployed dev build, after the UI
+  batches were code-complete — not caught earlier because unit tests mock the provider layer and
+  the golden-set harness (Task 6.5) only exercises `evaluate()`, not `/api/ask`.

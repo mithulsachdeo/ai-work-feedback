@@ -1,8 +1,8 @@
-# Signal / learn — Design System
+# Whetstone — Design System
 
 ## 1. Design Direction
 
-Signal / learn is a practical technology and AI learning platform for non-technical professionals.
+Whetstone is a practical technology and AI learning platform for non-technical professionals.
 
 The visual direction is derived from the design language of Homin.tech:
 

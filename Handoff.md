@@ -1,4 +1,4 @@
-# Handoff — Signal / learn (AI-work-feedback MVP, Case Study, due 26 Aug 2026)
+# Handoff — Whetstone (AI-work-feedback MVP, Case Study, due 26 Aug 2026)
 
 _Last updated: 2026-08-23 (end of session). This supersedes all earlier handoffs. The
 product is built, deployed, and live — this session was building + fixing + polishing,

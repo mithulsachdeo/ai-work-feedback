@@ -10,6 +10,7 @@ import QuotaBanner from "@/components/QuotaBanner";
 import ByoKeyModal from "@/components/ByoKeyModal";
 import FeedbackWidget from "@/components/FeedbackWidget";
 import ThemeToggle from "@/components/ThemeToggle";
+import Logo from "@/components/Logo";
 import type { EvaluationResult } from "@/lib/llm/types";
 
 export default function AppPage() {
@@ -195,17 +196,7 @@ export default function AppPage() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <a
-              href="/app"
-              style={{
-                fontWeight: 800,
-                fontSize: "19px",
-                letterSpacing: "-0.03em",
-                color: "var(--theme-card-text)",
-              }}
-            >
-              Signal / learn
-            </a>
+            <a href="/app" style={{ textDecoration: "none" }}><Logo height={26} /></a>
             <span
               style={{
                 fontSize: "10px",

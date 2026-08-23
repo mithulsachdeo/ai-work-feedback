@@ -1,4 +1,4 @@
-# Signal / learn — Product Guide
+# Whetstone — Product Guide
 
 _A plain-English explanation of what the product is, what every part of it does, how the
 feedback works, what we deliberately left out, and the reasoning behind those choices._
@@ -9,7 +9,7 @@ _Last updated: 2026-08-23. Written for a non-technical reader — no coding know
 
 ## 1. What this product is
 
-**In one sentence:** Signal / learn is a web tool where you bring one piece of work you
+**In one sentence:** Whetstone is a web tool where you bring one piece of work you
 made with the help of AI, and it gives you short, teaching feedback on two things — whether
 the work is actually good, and whether you used the AI well.
 
