@@ -10,6 +10,7 @@ import QuotaBanner from "@/components/QuotaBanner";
 import ByoKeyModal from "@/components/ByoKeyModal";
 import FeedbackWidget from "@/components/FeedbackWidget";
 import ThemeToggle from "@/components/ThemeToggle";
+import SignOutButton from "@/components/SignOutButton";
 import Logo from "@/components/Logo";
 import type { EvaluationResult } from "@/lib/llm/types";
 
@@ -252,6 +253,7 @@ export default function AppPage() {
               Guide
             </a>
             <ThemeToggle />
+            <SignOutButton />
           </div>
         </header>
 
