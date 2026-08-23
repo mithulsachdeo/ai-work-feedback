@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import SignIn from "@/components/SignIn";
 import ThemeToggle from "@/components/ThemeToggle";
 import RotatingPills from "@/components/RotatingPills";
+import Logo from "@/components/Logo";
 
 export default function Home() {
   useEffect(() => {
@@ -38,20 +39,7 @@ export default function Home() {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
           <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-            <span
-              style={{
-                textTransform: "uppercase",
-                letterSpacing: "0.14em",
-                fontSize: "11px",
-                fontWeight: 800,
-                padding: "6px 14px",
-                borderRadius: "var(--radius-pill)",
-                background: "var(--theme-card-surface)",
-                color: "var(--color-lime)",
-              }}
-            >
-              Signal / learn
-            </span>
+            <Logo />
             <span style={{ fontSize: "12px", color: "var(--theme-card-text-muted)" }}>
               Feedback coach for AI-assisted work
             </span>

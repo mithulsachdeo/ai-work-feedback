@@ -10,7 +10,7 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Signal / learn — AI-Assisted Work Feedback",
+  title: "Whetstone — Sharpen how you work with AI",
   description: "Bring one thing you made with AI — find out if it's good, and if you're using AI well.",
 };
 

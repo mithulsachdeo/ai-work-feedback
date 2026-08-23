@@ -6,7 +6,7 @@ import "./guide.css";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Guide — Signal / learn",
+  title: "Guide — Whetstone",
 };
 
 export default function GuidePage() {

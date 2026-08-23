@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 150" width="540" height="150" role="img" aria-label="Whetstone">
+  <defs>
+    <radialGradient id="sparkGlowL" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#C9FF36" stop-opacity="0.42"/>
+      <stop offset="45%" stop-color="#C9FF36" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#C9FF36" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="steelL" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7C7970"/>
+      <stop offset="100%" stop-color="#5A574F"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="540" height="150" rx="20" fill="#FFFCF5"/>
+  <g transform="translate(26,16)">
+    <circle cx="54" cy="64" r="30" fill="url(#sparkGlowL)"/>
+    <rect x="26" y="78" width="70" height="8" rx="4" fill="#8E8A7F" opacity="0.45"/>
+    <rect x="24" y="60" width="72" height="22" rx="9" fill="#C4C0B5"/>
+    <rect x="24" y="60" width="72" height="8" rx="9" fill="#D8D4C8"/>
+    <ellipse cx="40" cy="72" rx="2.6" ry="1.7" fill="#AEAA9F" opacity="0.65"/>
+    <ellipse cx="47" cy="76" rx="1.8" ry="1.2" fill="#AEAA9F" opacity="0.5"/>
+    <path d="M50,68 L92,19 L95,23 L58,72 Z" fill="url(#steelL)" stroke="#4C4942" stroke-width="0.6"/>
+    <path d="M50,68 L92,19" fill="none" stroke="#C9FF36" stroke-width="2.4" stroke-linecap="round"/>
+    <path d="M54,55 L56.2,63.2 L64,65 L56.2,66.8 L54,75 L51.8,66.8 L44,65 L51.8,63.2 Z" fill="#C9FF36"/>
+    <path d="M84,30 L85.1,33.4 L88.5,34.5 L85.1,35.6 L84,39 L82.9,35.6 L79.5,34.5 L82.9,33.4 Z" fill="#9B96EA"/>
+  </g>
+  <text x="152" y="82" font-family="'Manrope','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif" font-size="52" font-weight="800" letter-spacing="-1.6" fill="#171919">Whetstone</text>
+  <text x="154" y="105" font-family="'Manrope','Segoe UI',system-ui,-apple-system,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="0.3" fill="#171919" opacity="0.60">Sharpen how you work with AI</text>
+</svg>
