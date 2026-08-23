@@ -3,7 +3,7 @@
 _A plain-English explanation of what the product is, what every part of it does, how the
 feedback works, what we deliberately left out, and the reasoning behind those choices._
 
-_Last updated: 2026-08-23. Written for a non-technical reader — no coding knowledge assumed._
+_Last updated: 2026-08-24. Written for a non-technical reader — no coding knowledge assumed._
 
 ---
 
@@ -110,8 +110,9 @@ says so.)
 ### The landing page (before you sign in)
 - A bold headline — *"Is your AI-assisted work actually good?"* — and a short description of
   the promise.
-- A single **email field + "Email me a link"** button. That's the entire sign-up: no
-  password. (Why: lowest friction for a non-technical audience — see 8.1.)
+- An **email + password** sign-up (with a "Create account / Log in" toggle). There's no email
+  verification — you're in immediately — and no password recovery, so the screen says "use a
+  password you'll remember."
 - A rotating set of **"Moments like:"** pills (e.g. *"Before you hit send on that email"*).
   These cycle one at a time to show the kinds of situations the tool is for — framed as
   moments, not document types, so it doesn't feel like a closed list.
@@ -120,8 +121,9 @@ says so.)
 - A **light/dark theme toggle** (the small sun/moon icon).
 
 ### Signing in
-You enter your email and get a one-time link ("magic link"). Clicking it signs you in — no
-account to create, nothing to remember.
+You create an account with an email and a password (at least 8 characters), or log in if you
+already have one. There's no confirmation email and no password reset — the email is just an
+identifier (it can even be fake), so pick a password you'll remember.
 
 ### The one-time "What's your role?" question
 The first time in, you pick your role from a short list (Marketing, Ops, HR, Finance, Sales,
@@ -179,6 +181,8 @@ After you submit, you get:
 - **"Tell us"** — a small widget to rate the tool and leave a note to the makers. (Named
   "Tell us" deliberately, so it isn't confused with the *feedback the product gives you*.)
 - The **theme toggle.**
+- A **sign-out** control (a log-out icon). It asks you to confirm ("Sign out?") before logging
+  you out — a small guard, because with no password recovery, losing your password loses the account.
 
 ---
 
@@ -271,7 +275,7 @@ These aren't bugs or gaps — they're deliberate boundaries.
 
 ### Kept (in the product today)
 
-- **Magic-link sign-in** (email only, no password).
+- **Email + password sign-in** (no email verification, no recovery — emails may be fake by design).
 - **One-time role capture** (personalization only).
 - **Up-front consent line** (honest disclosure of storage + free-tier training).
 - **Three-question check picker** (framed by intent, not document type).

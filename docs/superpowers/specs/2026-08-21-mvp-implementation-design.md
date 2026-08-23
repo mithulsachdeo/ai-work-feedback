@@ -1,5 +1,7 @@
 # Design Spec — MVP Implementation
 
+> ⚠️ **Superseded in parts (2026-08-24) — historical snapshot.** Auth is now email+password (not magic-link, §4/§1). The **§8 metrics/event list is out of date** — current inventory + north-star live in `docs/analytics-events.md`. Body below is the original 2026-08-21 design, kept as a record.
+
 **Date:** 2026-08-21
 **Status:** Draft for review · grilled 2026-08-21 (see §14)
 **Related:** `2026-08-21-ai-work-rubric-design.md` (the rubric/product spec), `Handoff.md`, case brief

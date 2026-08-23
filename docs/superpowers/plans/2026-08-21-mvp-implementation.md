@@ -1,5 +1,7 @@
 # AI-Assisted-Work Feedback MVP — Implementation Plan
 
+> ⚠️ **Superseded in parts (2026-08-24) — historical snapshot + decision record.** Magic-link auth was later replaced by email+password. This file's grill log remains the canonical decision history; for *current* state read `Handoff.md`. Body below is the original 2026-08-21 plan.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Ship a working, instrumented web app where a signed-in user submits AI-assisted work (or their understanding of a concept) and gets bite-sized, teaching feedback scored against a six-criterion rubric.
