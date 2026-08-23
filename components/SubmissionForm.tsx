@@ -1,6 +1,21 @@
 "use client";
 import { useState } from "react";
-import { PASTE_BOX_NUDGE, HIGH_STAKES_LINE, LATE_NIGHT_LINE } from "@/constants";
+import {
+  PASTE_BOX_NUDGE,
+  HIGH_STAKES_LINE,
+  LATE_NIGHT_LINE,
+  MAX_INTENT_CHARS,
+  MAX_TEXT_CHARS,
+  MAX_INSTRUCTION_SUMMARY_CHARS,
+} from "@/constants";
+
+function getCounterColor(len: number, max: number, min?: number): string {
+  if (len > max) return "var(--level-emerging-fg)";
+  if (len >= max * 0.9) return "var(--level-solid-fg)";
+  if (min !== undefined && len < min) return "var(--theme-card-text-muted)";
+  if (len > 0) return "var(--color-mint)";
+  return "var(--theme-card-text-muted)";
+}
 
 const GEN_PROMPT = "Explain the logic of what we built, step by step, as if to a smart colleague who'll maintain it.";
 const SUMMARY_PROMPT = "Summarize, in order, what I asked you to build and any changes I requested.";
@@ -114,7 +129,10 @@ export default function SubmissionForm({
 
   const isImpl = type === "implementation_logic";
   const isLateNight = new Date().getHours() >= 21 || new Date().getHours() < 5;
-  const canSubmit = text.trim().length >= 20 && intent.trim().length >= 3;
+  const intentOver = intent.length > MAX_INTENT_CHARS;
+  const textOver = text.length > MAX_TEXT_CHARS;
+  const summaryOver = isImpl && instructionSummary.length > MAX_INSTRUCTION_SUMMARY_CHARS;
+  const canSubmit = text.trim().length >= 20 && intent.trim().length >= 3 && !intentOver && !textOver && !summaryOver;
   const helpInfo = HELP[type] ?? { title: "Submit Work", desc: "Paste your work below for evaluation." };
   const intentField = INTENT_FIELD[type] ?? { label: "What is this, and who is it for?", placeholder: "e.g. email to my VP proposing we delay launch by a week" };
   const workField = WORK_FIELD[type] ?? { label: "The work to evaluate", placeholder: "Paste your work here (minimum 20 characters)…" };
@@ -195,6 +213,14 @@ export default function SubmissionForm({
           onChange={(e) => setIntent(e.target.value)}
           style={{ ...fieldBase, padding: "14px 16px", borderRadius: "14px", fontSize: "15px" }}
         />
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
+          <span style={{ fontSize: "11px", lineHeight: 1.5, color: intentOver ? "var(--level-emerging-fg)" : "var(--theme-card-text-muted)" }}>
+            {intentOver ? `Trim to under ${MAX_INTENT_CHARS.toLocaleString()} characters to check.` : ""}
+          </span>
+          <span style={{ fontSize: "11px", lineHeight: 1.5, color: getCounterColor(intent.length, MAX_INTENT_CHARS, 3) }}>
+            {intent.length.toLocaleString()} / {MAX_INTENT_CHARS.toLocaleString()}
+          </span>
+        </div>
       </div>
 
       {/* 2. The work / implementation doc (scored artifact) */}
@@ -211,11 +237,11 @@ export default function SubmissionForm({
           style={{ ...fieldBase, padding: "16px", borderRadius: "16px", fontSize: "14px", lineHeight: 1.5, resize: "vertical" }}
         />
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
-          <span style={{ fontSize: "11px", lineHeight: 1.5, color: "var(--theme-card-text-muted)" }}>
-            {PASTE_BOX_NUDGE}
+          <span style={{ fontSize: "11px", lineHeight: 1.5, color: textOver ? "var(--level-emerging-fg)" : "var(--theme-card-text-muted)" }}>
+            {textOver ? `Trim to under ${MAX_TEXT_CHARS.toLocaleString()} characters to check.` : PASTE_BOX_NUDGE}
           </span>
-          <span style={{ fontSize: "11px", lineHeight: 1.5, color: text.length >= 20 ? "var(--color-mint)" : "var(--theme-card-text-muted)" }}>
-            {text.length} chars {text.length < 20 ? "(minimum 20)" : "✓"}
+          <span style={{ fontSize: "11px", lineHeight: 1.5, color: getCounterColor(text.length, MAX_TEXT_CHARS, 20) }}>
+            {text.length.toLocaleString()} / {MAX_TEXT_CHARS.toLocaleString()} {text.length < 20 ? "(minimum 20)" : textOver ? "✕" : "✓"}
           </span>
         </div>
       </div>
@@ -235,6 +261,14 @@ export default function SubmissionForm({
             onChange={(e) => setInstructionSummary(e.target.value)}
             style={{ ...fieldBase, padding: "16px", borderRadius: "16px", fontSize: "14px", lineHeight: 1.5, resize: "vertical" }}
           />
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: "6px" }}>
+            <span style={{ fontSize: "11px", lineHeight: 1.5, color: summaryOver ? "var(--level-emerging-fg)" : "var(--theme-card-text-muted)" }}>
+              {summaryOver ? `Trim to under ${MAX_INSTRUCTION_SUMMARY_CHARS.toLocaleString()} characters to check.` : ""}
+            </span>
+            <span style={{ fontSize: "11px", lineHeight: 1.5, color: getCounterColor(instructionSummary.length, MAX_INSTRUCTION_SUMMARY_CHARS) }}>
+              {instructionSummary.length.toLocaleString()} / {MAX_INSTRUCTION_SUMMARY_CHARS.toLocaleString()}
+            </span>
+          </div>
         </div>
       )}
 
