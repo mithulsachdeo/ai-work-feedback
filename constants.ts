@@ -13,7 +13,9 @@ export const MODELS = {
 
 export const TYPES = ["work_product", "implementation_logic", "concept_articulation"] as const;
 export const LEVELS = ["Emerging", "Solid", "Strong"] as const;
-export const MAX_SUBMISSION_CHARS = 5000;
+export const MAX_INTENT_CHARS = 300;
+export const MAX_TEXT_CHARS = 8000;
+export const MAX_INSTRUCTION_SUMMARY_CHARS = 2500;
 
 // Layer 1 (artifact), Layer 2 (AI usage) — order matters for the UI chips.
 export const CRITERIA = [

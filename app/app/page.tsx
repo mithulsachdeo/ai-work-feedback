@@ -100,9 +100,6 @@ export default function AppPage() {
         alert(j.error || "Evaluation failed. Please try again.");
         return;
       }
-      if (j.truncated) {
-        alert("Your submission was long, so I checked the first part of it.");
-      }
 
       setResult(j.result);
       setEvaluationId(j.evaluationId);
