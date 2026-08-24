@@ -10,6 +10,7 @@ import QuotaBanner from "@/components/QuotaBanner";
 import ByoKeyModal from "@/components/ByoKeyModal";
 import FeedbackWidget from "@/components/FeedbackWidget";
 import ThemeToggle from "@/components/ThemeToggle";
+import SignOutButton from "@/components/SignOutButton";
 import Logo from "@/components/Logo";
 import type { EvaluationResult } from "@/lib/llm/types";
 
@@ -47,6 +48,11 @@ export default function AppPage() {
         return;
       }
       setUserId(data.user.id);
+      // Link this browser's anonymous events (landing_viewed, app_opened…) to the authenticated
+      // user, so client + server events (which use user.id) stitch into one person. Idempotent.
+      // NOTE: pair a posthog.reset() with any future sign-out flow, or a shared browser could
+      // merge the next user's activity into this one.
+      posthog.identify(data.user.id);
       const { data: p } = await sb.from("profiles").select("role").eq("id", data.user.id).maybeSingle();
       setNeedsRole(!p?.role);
       setRole(p?.role ?? null);
@@ -247,6 +253,7 @@ export default function AppPage() {
               Guide
             </a>
             <ThemeToggle />
+            <SignOutButton />
           </div>
         </header>
 
