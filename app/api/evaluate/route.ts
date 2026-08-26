@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const submissionId = await saveSubmission(user.id, { type, intent, text, instructionSummary }, { previousSubmissionId: linkedPreviousId, doNotStore });
+    const { id: submissionId, rootSubmissionId } = await saveSubmission(user.id, { type, intent, text, instructionSummary }, { previousSubmissionId: linkedPreviousId, doNotStore });
     const evaluationId = await saveEvaluation(submissionId, result, provider, model, byo);
 
     // Measurement loop: extract levels; on a linked resubmission, record improvement.
@@ -176,8 +176,11 @@ export async function POST(req: NextRequest) {
     // decision ("failed / not_evaluable evaluations never burn a user's daily allowance").
     // Charge only on a genuinely scored result.
     if (!byo && !isNotEvaluable) await consumeQuota(user.id);
-    await track(user.id, "evaluation_completed", { type, provider, byo, levels });
-    if (improved) await track(user.id, "level_improved", { type });
+    // root_submission_id is the artifact-lineage id — the north-star's unit of analysis.
+    // It rides on both metric events so PostHog can compute Artifact Improvement Reach as
+    // count(distinct root_submission_id on level_improved) / count(distinct on evaluation_completed).
+    await track(user.id, "evaluation_completed", { type, provider, byo, levels, root_submission_id: rootSubmissionId });
+    if (improved) await track(user.id, "level_improved", { type, root_submission_id: rootSubmissionId });
     return NextResponse.json({
       evaluationId, submissionId, result,
       remaining: byo ? -1 : Math.max(0, remaining - (isNotEvaluable ? 0 : 1)),

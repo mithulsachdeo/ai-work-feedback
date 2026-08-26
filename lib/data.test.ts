@@ -7,12 +7,13 @@ test("saveSubmission inserts and returns the new id", async () => {
       return {
         insert(row: any) { calls.push({ table, row }); return this; },
         select() { return this; },
-        single: async () => ({ data: { id: "sub-1" }, error: null }),
+        single: async () => ({ data: { id: "sub-1", root_submission_id: "sub-1" }, error: null }),
       };
     },
   };
-  const id = await saveSubmission("u1", { type: "work_product", intent: "i", text: "t" }, {}, fakeSb as any);
+  const { id, rootSubmissionId } = await saveSubmission("u1", { type: "work_product", intent: "i", text: "t" }, {}, fakeSb as any);
   expect(id).toBe("sub-1");
+  expect(rootSubmissionId).toBe("sub-1");
   expect(calls[0].table).toBe("submissions");
   expect(calls[0].row.user_id).toBe("u1");
 });

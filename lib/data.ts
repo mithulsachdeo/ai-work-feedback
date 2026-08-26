@@ -3,12 +3,15 @@ import { getServerClient } from "./supabase/server";
 
 type Sb = ReturnType<typeof getServerClient>;
 
+// Returns the new submission id and its lineage root (root_submission_id, set by a DB trigger —
+// migration 0005). The root is the north-star's unit of analysis; the caller attaches it to the
+// `evaluation_completed` / `level_improved` events so PostHog can group by artifact-lineage.
 export async function saveSubmission(
   userId: string,
   s: Submission,
   opts: { previousSubmissionId?: string; doNotStore?: boolean } = {},
   sb: Sb = getServerClient()
-): Promise<string> {
+): Promise<{ id: string; rootSubmissionId: string }> {
   const { data, error } = await sb.from("submissions")
     .insert({
       user_id: userId,
@@ -19,9 +22,9 @@ export async function saveSubmission(
       instruction_summary: opts.doNotStore ? null : (s.instructionSummary ?? null),
       previous_submission_id: opts.previousSubmissionId ?? null,
     })
-    .select().single();
+    .select("id, root_submission_id").single();
   if (error) throw error;
-  return (data as any).id;
+  return { id: (data as any).id, rootSubmissionId: (data as any).root_submission_id };
 }
 
 // Latest evaluation's per-criterion levels for a submission (null if none or not_evaluable).
